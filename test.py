@@ -1,33 +1,46 @@
-import math
-import os
-import random
-import time
-import sys
-
-import jsbsim
-
-sys.path.append(str(jsbsim.get_default_root_dir()) + '/FCM/')
-
-from myModule.representation_learning.getRl import get_rl
-from myModule.representation_learning import getStatus
-
-fdm = jsbsim.FGFDMExec(None)
-fdm.load_model('f16')
+import torch
+import torch.nn as nn
+import torch.autograd as autograd
+import torch.nn.functional as F
+import numpy as np
+import copy
 
 
 
-fdm['ic/vc-kts'] = 1000
-fdm["ic/h-sl-ft"] = 30005.5
+# class Test():
 
-fdm.run_ic()
+#     def __init__(self) -> None:
+#         self.cnt = 0
+    
+#     def add(self):
+#         self.cnt += 1
 
-i = 0
+#     def print(self):
+#         print(self.cnt)
 
-while fdm.run():
-    x = time.time()
-    i = i + 1
-    if i > 1000:
-        break
-    fdm.run_ic()
-    fdm['ic/vc-kts'] = 1000
-    print(1 / (time.time() - x))
+# class Add():
+
+#     def __init__(self, test) -> None:
+#         self.test = test
+    
+#     def add(self):
+#         self.test.add()
+    
+#     def print(self):
+#         self.test.print()
+
+class Add():
+    def __init__(self) -> None:
+        self.list = None
+
+    def add(self, b):
+        self.list = b
+    def print(self):
+        print(self.list)
+
+if __name__ == '__main__':
+    
+    b=[1,2,3]
+    a = b
+    b = [4]
+    print(a)
