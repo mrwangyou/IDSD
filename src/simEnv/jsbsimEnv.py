@@ -7,94 +7,74 @@ import time
 import jsbsim
 import numpy as np
 
-sys.path.append(str(jsbsim.get_default_root_dir()) + '/oFCM/')
+sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
 
 class JsbsimEnv():
 
-    def __init__(self,
-                 fdm1_aircraft = 'f16',   fdm2_aircraft = 'f16',
+    def __init__(
+        self,
+        fdm_id       = 1,
+        fdm_aircraft = 'f16',   
+        fdm_ic_v     = 500,     
+        fdm_ic_lat   = 0,       
+        fdm_ic_long  = 0,       
+        fdm_ic_h     = 30005.5, 
+        fdm_ic_psi   = 0,       
+        fdm_ic_theta = 0,       
+        fdm_ic_phi   = 90,      
 
-                 fdm1_ic_v     = 500,     fdm2_ic_v     = 500,
-                 fdm1_ic_lat   = 0,       fdm2_ic_lat   = 0.001,
-                 fdm1_ic_long  = 0,       fdm2_ic_long  = 0.00005,
-                 fdm1_ic_h     = 30005.5, fdm2_ic_h     = 30005.5,
-                 fdm1_ic_psi   = 0,       fdm2_ic_psi   = 0,
-                 fdm1_ic_theta = 0,       fdm2_ic_theta = 0,
-                 fdm1_ic_phi   = 90,      fdm2_ic_phi   = 90,
-
-                 fdm1_hp       = 1,       fdm2_hp      = 1,
-                 fdm1_fgfs     = True,    fdm2_fgfs    = True,
-                #  sim_speed     = 0,  # 0 for no delay
-                 flight_mode   = 1,  # 0 for flight test
-                 ) -> None:
+        fdm_hp       = 1,
+        fdm_fgfs     = True,
+        flight_mode   = 1,  # 0 for flight test
+    ) -> None:
 
         # FDM Initialization
-        self.fdm1 = jsbsim.FGFDMExec(None)
-        self.fdm2 = jsbsim.FGFDMExec(None)
-        self.fdm = [self.fdm1, self.fdm2]
+        self.fdm = jsbsim.FGFDMExec(None)
         
-        self.fdm1.load_model(fdm1_aircraft)  # Aircraft
-        self.fdm2.load_model(fdm2_aircraft)  
+        # Aircraft Loading
+        self.fdm.load_model(fdm_aircraft)  
         
-        if fdm1_fgfs is True:
-            self.fdm1.set_output_directive('./data_output/flightgear.xml')  # Visualization fgfs Port 5550
-        if fdm2_fgfs is True:
-            self.fdm2.set_output_directive('./data_output/flightgear2.xml')  # Port 5551
+        # Visualization fgfs Port 5550
+        if fdm_fgfs is True:
+            self.fdm.set_output_directive('./data_output/flightgear{}.xml'.format(fdm_id))  
         
         # Velocity Initialization
-        self.fdm1['ic/vc-kts'] = fdm1_ic_v  # Calibrated Velocity (knots) https://skybrary.aero/articles/calibrated-airspeed-cas#:~:text=Definition,port%20caused%20by%20airflow%20disruption).
-        self.fdm2['ic/vc-kts'] = fdm2_ic_v  # 1 knots = 1.852 km/h = 0.514 m/s
+        self.fdm['ic/vc-kts'] = fdm_ic_v  # Calibrated Velocity (knots) https://skybrary.aero/articles/calibrated-airspeed-cas#:~:text=Definition,port%20caused%20by%20airflow%20disruption).
 
         # Position Initialization
-        self.fdm1["ic/lat-gc-deg"] = fdm1_ic_lat  # Latitude (degree)
-        self.fdm1["ic/long-gc-deg"] = fdm1_ic_long  # Longitude (degree)
-        self.fdm1["ic/h-sl-ft"] = fdm1_ic_h  # Height above sea level (feet)
-        self.fdm1["ic/psi-true-deg"] = fdm1_ic_psi  # 偏航角，绕Z轴，按照列出顺序进行欧拉角计算
-        self.fdm1["ic/theta-deg"] = fdm1_ic_theta  # 俯仰角，绕Y轴
-        self.fdm1["ic/phi-deg"] = fdm1_ic_phi  # 翻滚角，绕X轴
-
-        self.fdm2["ic/lat-gc-deg"] = fdm2_ic_lat  # Recommend ~0.01
-        self.fdm2["ic/long-gc-deg"] = fdm2_ic_long  # Recommend ~0.00005
-        self.fdm2["ic/h-sl-ft"] = fdm2_ic_h
-        self.fdm2["ic/psi-true-deg"] = fdm2_ic_psi
-        self.fdm2["ic/theta-deg"] = fdm2_ic_theta
-        self.fdm2["ic/phi-deg"] = fdm2_ic_phi
+        self.fdm["ic/lat-gc-deg"] = fdm_ic_lat  # Latitude (degree)
+        self.fdm["ic/long-gc-deg"] = fdm_ic_long  # Longitude (degree)
+        self.fdm["ic/h-sl-ft"] = fdm_ic_h  # Height above sea level (feet)
+        self.fdm["ic/psi-true-deg"] = fdm_ic_psi  # 偏航角，绕Z轴，JSBSim将按照这里列出的顺序进行欧拉角计算
+        self.fdm["ic/theta-deg"] = fdm_ic_theta  # 俯仰角，绕Y轴
+        self.fdm["ic/phi-deg"] = fdm_ic_phi  # 翻滚角，绕X轴
 
         ##########################
         ## Model Initialization ##
-        self.fdm1.run_ic()      ##
-        self.fdm2.run_ic()      ##
+        self.fdm.run_ic()       ##
         ##########################
 
         # Engine Turning on
-        self.fdm1["propulsion/starter_cmd"] = 1
-        self.fdm2["propulsion/starter_cmd"] = 1
+        self.fdm["propulsion/starter_cmd"] = 1
 
         # Refueling
         if flight_mode == 0:
-            self.fdm1["propulsion/refuel"] = 1
-            self.fdm2["propulsion/refuel"] = 1
+            self.fdm["propulsion/refuel"] = 1
 
         # First but not Initial
-        self.fdm1.run()
-        self.fdm1["propulsion/active_engine"] = True
-        self.fdm1["propulsion/set-running"] = 0
-
-        self.fdm2.run()
-        self.fdm2["propulsion/active_engine"] = True
-        self.fdm2["propulsion/set-running"] = 0
+        self.fdm.run()
+        self.fdm["propulsion/active_engine"] = True
+        self.fdm["propulsion/set-running"] = 0
 
         self.nof = 1  # Number of frames
 
         # HP setting
-        self.fdm1_hp = fdm1_hp
-        self.fdm2_hp = fdm2_hp
+        self.fdm_hp = fdm_hp
 
     def getProperty(
         self,
         prop,
-        id=0,
     ) -> list:
         if prop == 'position':
             prop = [
@@ -114,6 +94,12 @@ class JsbsimEnv():
                 "attitude/theta-rad",  # Pitch 俯仰角
                 "attitude/phi-rad",  # Roll 翻滚角
             ]
+        elif prop == 'attitudeDeg':
+            prop = [
+                "attitude/psi-deg",
+                "attitude/theta-deg",
+                "attitude/phi-deg",
+            ]
         elif prop == 'pose':
             prop = [
                 "position/lat-gc-deg",
@@ -130,136 +116,139 @@ class JsbsimEnv():
                 "velocities/v-down-fps",
             ]
         else:
-            raise Exception("Property {} doesn't exist!".format(prop))
+            return self.fdm[prop]
 
-        if id == 1:
-            return [
-                [self.fdm1[item] for item in prop]
-            ]
-        elif id == 2:
-            return [
-                [self.fdm2[item] for item in prop]
-            ]
-        elif id == 0:
-            return [
-                [self.fdm1[item] for item in prop],
-                [self.fdm2[item] for item in prop]
-            ]
-        else:
-            raise Exception("Plane {} doesn't exist!".format(id))
+        return [
+            self.fdm[item] for item in prop
+        ]
 
-
-    def sendAction(self, action, id):
+    def sendAction(
+        self,
+        action,
+    ):
         action_space = [
             "fcs/aileron-cmd-norm",
             "fcs/elevator-cmd-norm",
             "fcs/rudder-cmd-norm",
             "fcs/throttle-cmd-norm",
         ]
-        
-        if not 0 < id <= len(self.fdm):
-            raise Exception("Plane {} doesn't exist!".format(id))
 
         for i in range(len(action_space)):
-            # print("?{}".format(action))
-            self.fdm[id - 1][action_space[i]] = action[0][i]
+            self.fdm[action_space[i]] = action[i]
 
-    def getDistance(self, id=None):
-        positionEci = self.getProperty("positionEci", 0)
-        if id == 1:
-            return np.array(positionEci[1]) - np.array(positionEci[0])
-        elif id == 2:
-            return np.array(positionEci[0]) - np.array(positionEci[1])
-        elif id is None:
-            return np.linalg.norm(np.array(positionEci[1]) - np.array(positionEci[0]))
-        else:
-            raise Exception("Plane {} doesn't exist!".format(id))
+    def getHP(self):  # Health point
+        return self.fdm_hp
+    
+    def damage(self, dmg):
+        self.fdm_hp = self.fdm_hp - dmg
 
-    def getHP(self, id):
-        if id == 1:
-            return self.fdm1_hp
-        elif id == 2:
-            return self.fdm2_hp
-        elif id == 0:
-            return [
-                self.fdm1_hp,
-                self.fdm2_hp,
-            ]
-
-    def nof(self):
+    def getNof(self):  # Number of frames
         return self.nof
+    
+    def step(self):
+        self.nof = self.nof + 1
+        self.fdm.run()
 
+    def terminal(self):  # Unused
+        if self.fdm_hp <= 0:
+            return 1
+        else:
+            return 0
+
+
+class DogfightEnv():
+
+    def __init__(
+        self,
+    ) -> None:
+        self.fdm = [
+            JsbsimEnv(1),
+            JsbsimEnv(2),
+        ]
+
+    def getFdm(
+        self,
+        fdmId=0,
+    ):
+        if fdmId == 0:
+            return self.fdm
+        else:
+            return self.fdm[fdmId - 1]
+    
+    def getDistanceVector(self, ego):
+        positionEci1 = self.getFdm(1).getProperty("positionEci")  # A list of size [3]
+        positionEci2 = self.getFdm(2).getProperty("positionEci")  # A list of size [3]
+        if ego == 1:
+            return np.array(positionEci2) - np.array(positionEci1)
+        elif ego == 2:
+            return np.array(positionEci1) - np.array(positionEci2)
+        else:
+            raise Exception("Plane {} doesn't exist".format(ego))
+
+    def getDistance(self):
+        return np.linalg.norm(self.getDistanceVector())
+    
     def damage(self):
-        positionEci = self.getProperty("positionEci", 0)
-        attitude = self.getProperty("attitudeRad", 0)
+        attitude1 = self.getFdm(1).getProperty("attitudeRad")  # A list of size [3]
+        attitude2 = self.getFdm(2).getProperty("attitudeRad")  # A list of size [3]
 
-        dPosition_1 = np.array(positionEci[1]) - np.array(positionEci[0])
-        theta_1 = np.pi / 2 - attitude[0][1]
-        phi_1 = np.pi / 2 - attitude[0][0]
+        theta_1 = np.pi / 2 - attitude1[1]
+        psi_1 = np.pi / 2 - attitude1[0]
         heading_1 = np.array([
             np.cos(theta_1),
-            np.sin(theta_1) * np.cos(phi_1),
-            np.sin(theta_1) * np.sin(phi_1),
+            np.sin(theta_1) * np.cos(psi_1),
+            np.sin(theta_1) * np.sin(psi_1),
         ])
 
-        dPosition_2 = -dPosition_1
-        theta_2 = np.pi / 2 - attitude[1][1]
-        phi_2 = np.pi / 2 - attitude[1][0]
+        theta_2 = np.pi / 2 - attitude2[1]
+        psi_2 = np.pi / 2 - attitude2[0]
         heading_2 = np.array([
             np.cos(theta_2),
-            np.sin(theta_2) * np.cos(phi_2),
-            np.sin(theta_2) * np.sin(phi_2),
+            np.sin(theta_2) * np.cos(psi_2),
+            np.sin(theta_2) * np.sin(psi_2),
         ])
 
-        if 500 <= np.linalg.norm(dPosition_1) <= 3000:
+        if 500 <= self.getDistance() <= 3000:
             angle1 = np.arcsin(
-                np.linalg.norm(np.cross(dPosition_1, heading_1)) /
-                (np.linalg.norm(dPosition_1) * np.linalg.norm(heading_1))
+                np.linalg.norm(np.cross(self.getDistanceVector(ego=1), heading_1)) /
+                (self.getDistance() * np.linalg.norm(heading_1))
             )
 
             if -1 <= angle1 / np.pi * 180 <= 1:
-                self.fdm2_hp -= (3000 - np.linalg.norm(dPosition_1)) / 2500 / 120
+                self.getFdm(2).damage((3000 - self.getDistance()) / 2500 / 120)
 
             angle2 = np.arcsin(
-                np.linalg.norm(np.cross(dPosition_2, heading_2)) /
-                (np.linalg.norm(dPosition_2) * np.linalg.norm(heading_2))
+                np.linalg.norm(np.cross(self.getDistanceVector(ego=2), heading_2)) /
+                (self.getDistance() * np.linalg.norm(heading_2))
             )
 
             if -1 <= angle2 / np.pi * 180 <= 1:
-                self.fdm1_hp -= (3000 - np.linalg.norm(dPosition_2)) / 2500 / 120
-    
+                self.getFdm(1).damage((3000 - self.getDistance()) / 2500 / 120)
+
     def terminal(self):
-        if self.fdm1_hp <= 0 and self.fdm2_hp > 0:
+        if self.getFdm(1).getHP() <= 0 and self.getFdm(2).getHP() > 0:
             return 2
-        if self.fdm2_hp <= 0 and self.fdm1_hp > 0:
+        elif self.getFdm(2).getHP() <= 0 and self.getFdm(1).getHP() > 0:
             return 1
-        if self.fdm1_hp <= 0 and self.fdm2_hp <= 0:
+        elif self.getFdm(1).getHP() <= 0 and self.getFdm(2).getHP() <= 0:
             return -1
-        return 0
-        
+        else:
+            return 0
 
-    def step(self, realtime=0):
+    def step(self, playSpeed=0):
 
-        # self.sendAction(self.getAction(self.getProperty('position', 1)), 1)
-        # self.sendAction(self.getAction(self.getProperty('position', 2)), 2)
-
-        self.nof += 1
-
-        self.fdm1.run()
-        self.fdm2.run()
+        self.getFdm(1).step()
+        self.getFdm(2).step()
 
         self.damage()
 
-        if self.nof >= 600:
+        if self.nof >= 1000:
             return 1
         
-        if realtime != 0:
-            time.sleep(self.fdm1.get_delta_t() / 1)
+        if playSpeed != 0:
+            time.sleep(self.fdm1.get_delta_t() / playSpeed)
 
         return self.terminal()
-
-
-
 
 
 
