@@ -15,21 +15,23 @@ torch.set_num_threads(8)
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/oFCM/')
 
 from repLearning.repLearning import Representation
-from src.simEnv.jsbsimEnv import JsbsimEnv as Env
+from src.simEnv.jsbsimEnv import DogfightEnv as Env
 
 
 class DogfightDataset(Dataset):
 
-    def __init__(self,
-                 status,  # of size [num_of_data, 9, 10, 50, 50]
-                 property,  # of size [num_of_data, num_of_property]
-                 label):  # of size [num_of data]
+    def __init__(
+        self,
+        status,  # of size [num_of_data, 9, 10, 50, 50]
+        property,  # of size [num_of_data, num_of_property]
+        label,  # of size [num_of data]
+    ):
         self.status = status
         self.property = property 
         self.label = label
 
     def __len__(self):
-        return self.status.size()[0]
+        return len(self.status)
 
     def __getitem__(self, index):
         data = {}
@@ -44,12 +46,12 @@ class IDSD():
     def __init__(self) -> None:
         from repLearning.cnn import Model
         self.model = Model(
-
+            
         )
-        if not os.path.exists('./bestModel'):
-            os.mkdir('./bestModel/')
-        if os.listdir('./bestModel') != []:
-            self.model.load_state_dict(torch.load('./bestModel/{}'.format(os.listdir('./bestModel')[:-1])))
+        if not os.path.exists('/data/wnn_data/bestModel'):
+            os.mkdir('/data/wnn_data/bestModel')
+        if os.listdir('/data/wnn_data/bestModel') != []:
+            self.model.load_state_dict(torch.load('/data/wnn_data/bestModel/Epoch.pt'))
 
     def episode(
         self,
@@ -57,57 +59,53 @@ class IDSD():
         optimizer,
     ):
         env = Env()
-        print(env.nof)
+        print("**********Nof: {}**********".format(env.getNof()))
         wins_record1 = []
         wins_record2 = []
         
         while True:
-            flag = env.step()
-            if flag != 0:
+            
+            terminate = env.step(playSpeed=0)
+            if terminate != 0:
                 break
+
             rep1 = Representation(env)
             rep2 = Representation(env)
-            rl1 = rep1.getRepresentation(env.nof, 'IDSD', self.model, device, 1)
-            rl2 = rep2.getRepresentation(env.nof, 'IDSD', self.model, device, 2)
-            print(rl1)
-            # print(rl1)
-            # print("**************")
-            # print(rl2)
-            if env.nof % 12 == 0:
+            rl1 = rep1.getRepresentation('IDSD', self.model, device, 1) + torch.cat([torch.rand([1, 4]) / 3, torch.zeros([1, 1])], dim=1).to(device)
+            rl2 = rep2.getRepresentation('IDSD', self.model, device, 2)
+            if env.getNof() % 12 == 0:
                 if wins_record1 == []:
                     wins_record1 = torch.cat([rl1, torch.ones([1, 1]).to(device)], dim=1).unsqueeze(0)
-                    input1 = rep1.getStatus(env.nof)
+                    input1 = rep1.getStatus(env.getNof())
                     inputp_1 = torch.Tensor(rep1.getProperty()).unsqueeze(0)
 
                     wins_record2 = torch.cat([rl2, torch.ones([1, 1]).to(device)], dim=1).unsqueeze(0)
-                    input2 = rep2.getStatus(env.nof)
+                    input2 = rep2.getStatus(env.getNof())
                     inputp_2 = torch.Tensor(rep2.getProperty()).unsqueeze(0)
                 else:
                     wins_record1 = torch.cat([wins_record1, torch.cat([rl1, torch.ones(1, 1).to(device)], dim=1).unsqueeze(0)], dim=0)
-                    input1 = torch.cat([input1, rep1.getStatus(env.nof)])
+                    input1 = torch.cat([input1, rep1.getStatus(env.getNof())])
                     inputp_1 = torch.cat([inputp_1, torch.Tensor(rep1.getProperty()).unsqueeze(0)])
 
                     wins_record2 = torch.cat([wins_record2, torch.cat([rl2, torch.ones(1, 1).to(device)], dim=1).unsqueeze(0)], dim=0)
-                    input2 = torch.cat([input2, rep2.getStatus(env.nof)])
+                    input2 = torch.cat([input2, rep2.getStatus(env.getNof())])
                     inputp_2 = torch.cat([inputp_2, torch.Tensor(rep2.getProperty()).unsqueeze(0)])
             env.sendAction(rl1.tolist(), 1)
             env.sendAction(rl2.tolist(), 2)
-        if flag == 1:
+        if terminate == 1:
             wins_data = wins_record1
             wins_input = input1
             wins_inputp = inputp_1
-        elif flag == 2:
+        elif terminate == 2:
             wins_data = wins_record2
             wins_input = input2
             wins_inputp = inputp_2
-        elif flag == -1:
+        elif terminate == -1:
             return
         else:
-            raise Exception("Return code error!", flag)
+            raise Exception("Return code error!", terminate)
 
-        label = wins_data
-
-        fullDataset = DogfightDataset(wins_input, wins_inputp, label)
+        fullDataset = DogfightDataset(wins_input, wins_inputp, wins_data)
         trainLoader = DataLoader(dataset=fullDataset, batch_size=1, shuffle=True)
         for _ in range(1):
             for batch in trainLoader:
@@ -147,7 +145,7 @@ class IDSD():
 
     def train(
         self,
-        epochs=50,
+        epochs=10,
         cuda='0',
         optimizer='SGD',
         lr=1e-2,
@@ -159,18 +157,21 @@ class IDSD():
         if optimizer == 'SGD':
             optimizer = optim.SGD(self.model.parameters(), lr, momentum, weight_decay)
         elif optimizer == 'Adam':
-            pass
+            raise Exception("Optimizer Adam isn't supported yet :(")
         else:
-            raise Exception("Optimizer {} doesn't exist".format(optimizer))
+            raise Exception("Optimizer {} doesn't exist.".format(optimizer))
         for _ in tqdm(range(epochs)):
             self.episode(device, optimizer)
-        
-
-    
+            torch.save(self.model.state_dict(), '/data/wnn_data/bestModel/Epoch.pt')
 
 
 if __name__ == '__main__':
-    model = IDSD()
-    model.train()
+    model = IDSD(
+
+    )
+
+    model.train(
+        cuda='3',
+    )
 
     

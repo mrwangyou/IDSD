@@ -149,7 +149,7 @@ class JsbsimEnv():
         self.nof = self.nof + 1
         self.fdm.run()
 
-    def terminal(self):  # Unused
+    def terminate(self):  # Unused
         if self.fdm_hp <= 0:
             return 1
         else:
@@ -188,6 +188,12 @@ class DogfightEnv():
     def getDistance(self):
         return np.linalg.norm(self.getDistanceVector())
     
+    def getHP(self):
+        return [
+            self.getFdm(1).getHP(),
+            self.getFdm(2).getHP(),
+        ]
+
     def damage(self):
         attitude1 = self.getFdm(1).getProperty("attitudeRad")  # A list of size [3]
         attitude2 = self.getFdm(2).getProperty("attitudeRad")  # A list of size [3]
@@ -225,7 +231,7 @@ class DogfightEnv():
             if -1 <= angle2 / np.pi * 180 <= 1:
                 self.getFdm(1).damage((3000 - self.getDistance()) / 2500 / 120)
 
-    def terminal(self):
+    def terminate(self):
         if self.getFdm(1).getHP() <= 0 and self.getFdm(2).getHP() > 0:
             return 2
         elif self.getFdm(2).getHP() <= 0 and self.getFdm(1).getHP() > 0:
@@ -235,6 +241,11 @@ class DogfightEnv():
         else:
             return 0
 
+    def getNof(self):
+        if self.getFdm(1).getNof() != self.getFdm(2).getNof():
+            raise Exception("FDM NoF Error!", self.getFdm(1).getNof(), self.getFdm(2).getNof())
+        return self.getFdm(1).getNof()
+
     def step(self, playSpeed=0):
 
         self.getFdm(1).step()
@@ -242,17 +253,17 @@ class DogfightEnv():
 
         self.damage()
 
-        if self.nof >= 1000:
-            return 1
-        
+        if self.getFdm(1).getNof() >= 1000:
+            return -1
+
         if playSpeed != 0:
-            time.sleep(self.fdm1.get_delta_t() / playSpeed)
+            time.sleep(self.getFdm(1).get_delta_t() / playSpeed)
 
-        return self.terminal()
+        return self.terminate()
 
 
 
-        
+
 
 
 
