@@ -25,7 +25,7 @@ class JsbsimEnv():
         fdm_ic_phi   = 90,      
 
         fdm_hp       = 1,
-        fdm_fgfs     = True,
+        fdm_fgfs     = False,
         flight_mode   = 1,  # 0 for flight test
     ) -> None:
 
@@ -134,7 +134,7 @@ class JsbsimEnv():
         ]
 
         for i in range(len(action_space)):
-            self.fdm[action_space[i]] = action[i]
+            self.fdm[action_space[i]] = action[0][i]
 
     def getHP(self):  # Health point
         return self.fdm_hp
@@ -170,11 +170,11 @@ class DogfightEnv():
         self,
         fdmId=0,
     ):
-        if fdmId == 0:
+        if fdmId == 0:  # Caution! 
             return self.fdm
         else:
             return self.fdm[fdmId - 1]
-    
+
     def getDistanceVector(self, ego):
         positionEci1 = self.getFdm(1).getProperty("positionEci")  # A list of size [3]
         positionEci2 = self.getFdm(2).getProperty("positionEci")  # A list of size [3]
@@ -183,10 +183,10 @@ class DogfightEnv():
         elif ego == 2:
             return np.array(positionEci1) - np.array(positionEci2)
         else:
-            raise Exception("Plane {} doesn't exist".format(ego))
+            raise Exception("Plane {} doesn\'t exist".format(ego))
 
     def getDistance(self):
-        return np.linalg.norm(self.getDistanceVector())
+        return np.linalg.norm(self.getDistanceVector(1))
     
     def getHP(self):
         return [
@@ -253,7 +253,7 @@ class DogfightEnv():
 
         self.damage()
 
-        if self.getFdm(1).getNof() >= 1000:
+        if self.getNof() >= 1000:
             return -1
 
         if playSpeed != 0:

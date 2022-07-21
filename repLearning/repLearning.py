@@ -46,13 +46,12 @@ class IDSDRep():
         ftpg=500,
     ):
         self.setStatus(ftpg, id)
-        # print("***{}".format(self.model(self.getStatus().to(self.device), torch.Tensor([self.env.getDistance()] + self.env.getHP(0)).unsqueeze(0).to(self.device))))
         if id == 1:
-            # return self.model(self.getStatus().to(self.device), torch.Tensor([self.env.getDistance()] + self.env.getHP(0)).unsqueeze(0).to(self.device))  # TBD until new cnn model
-            raise Exception('Hasn\'t finished yet')
+            return self.model(self.getStatus().to(self.device), torch.Tensor([self.env.getDistance()] + self.env.getHP()).unsqueeze(0).to(self.device))
         elif id == 2:
-            # return self.model(self.getStatus().to(self.device), torch.Tensor([self.env.getDistance()] + self.env.getHP(0)[::-1]).unsqueeze(0).to(self.device))  # TBD until new cnn model
-            raise Exception('Hasn\'t finished yet')
+            return self.model(self.getStatus().to(self.device), torch.Tensor([self.env.getDistance()] + self.env.getHP()[::-1]).unsqueeze(0).to(self.device))
+        else:
+            raise Exception("Plane {} doesn\'t exist!".format(id))
 
 
 class Representation():
@@ -70,11 +69,11 @@ class Representation():
 
     def getProperty(self, id) -> torch.Tensor:
         if id == 1:
-            return torch.Tensor([self.env.getFdm(1).getDistance()] + self.env.getHP(0))
+            return torch.Tensor([self.env.getDistance()] + self.env.getHP())
         elif id == 2:
-            return torch.Tensor([self.env.getFdm(1).getDistance()] + self.env.getHP(0)[::-1])
+            return torch.Tensor([self.env.getDistance()] + self.env.getHP()[::-1])
         else:
-            raise Exception('Plane {} doesn\'t exist!'.format(id))
+            raise Exception("Plane {} doesn\'t exist!".format(id))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import jsbsim
 import numpy as np
@@ -12,7 +13,7 @@ from tqdm import tqdm
 
 torch.set_num_threads(8)
 
-sys.path.append(str(jsbsim.get_default_root_dir()) + '/oFCM/')
+sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
 from repLearning.repLearning import Representation
 from src.simEnv.jsbsimEnv import DogfightEnv as Env
@@ -51,7 +52,11 @@ class IDSD():
         if not os.path.exists('/data/wnn_data/bestModel'):
             os.mkdir('/data/wnn_data/bestModel')
         if os.listdir('/data/wnn_data/bestModel') != []:
-            self.model.load_state_dict(torch.load('/data/wnn_data/bestModel/Epoch.pt'))
+            try:
+                self.model.load_state_dict(torch.load('/data/wnn_data/bestModel/Epoch.pt'))
+            except:
+                print("Model Loading Error!")
+                time.sleep(1)
 
     def episode(
         self,
@@ -76,22 +81,22 @@ class IDSD():
             if env.getNof() % 12 == 0:
                 if wins_record1 == []:
                     wins_record1 = torch.cat([rl1, torch.ones([1, 1]).to(device)], dim=1).unsqueeze(0)
-                    input1 = rep1.getStatus(env.getNof())
-                    inputp_1 = torch.Tensor(rep1.getProperty()).unsqueeze(0)
+                    input1 = rep1.getStatus()
+                    inputp_1 = torch.Tensor(rep1.getProperty(1)).unsqueeze(0)
 
                     wins_record2 = torch.cat([rl2, torch.ones([1, 1]).to(device)], dim=1).unsqueeze(0)
-                    input2 = rep2.getStatus(env.getNof())
-                    inputp_2 = torch.Tensor(rep2.getProperty()).unsqueeze(0)
+                    input2 = rep2.getStatus()
+                    inputp_2 = torch.Tensor(rep2.getProperty(2)).unsqueeze(0)
                 else:
                     wins_record1 = torch.cat([wins_record1, torch.cat([rl1, torch.ones(1, 1).to(device)], dim=1).unsqueeze(0)], dim=0)
-                    input1 = torch.cat([input1, rep1.getStatus(env.getNof())])
-                    inputp_1 = torch.cat([inputp_1, torch.Tensor(rep1.getProperty()).unsqueeze(0)])
+                    input1 = torch.cat([input1, rep1.getStatus()])
+                    inputp_1 = torch.cat([inputp_1, torch.Tensor(rep1.getProperty(1)).unsqueeze(0)])
 
                     wins_record2 = torch.cat([wins_record2, torch.cat([rl2, torch.ones(1, 1).to(device)], dim=1).unsqueeze(0)], dim=0)
-                    input2 = torch.cat([input2, rep2.getStatus(env.getNof())])
-                    inputp_2 = torch.cat([inputp_2, torch.Tensor(rep2.getProperty()).unsqueeze(0)])
-            env.sendAction(rl1.tolist(), 1)
-            env.sendAction(rl2.tolist(), 2)
+                    input2 = torch.cat([input2, rep2.getStatus()])
+                    inputp_2 = torch.cat([inputp_2, torch.Tensor(rep2.getProperty(2)).unsqueeze(0)])
+            env.getFdm(1).sendAction(rl1.tolist())
+            env.getFdm(2).sendAction(rl2.tolist())
         if terminate == 1:
             wins_data = wins_record1
             wins_input = input1
