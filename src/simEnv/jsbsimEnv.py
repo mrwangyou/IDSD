@@ -15,14 +15,14 @@ class JsbsimEnv():
     def __init__(
         self,
         fdm_id       = 1,
-        fdm_aircraft = 'f16',   
-        fdm_ic_v     = 500,     
-        fdm_ic_lat   = 0,       
-        fdm_ic_long  = 0,       
-        fdm_ic_h     = 30005.5, 
-        fdm_ic_psi   = 0,       
-        fdm_ic_theta = 0,       
-        fdm_ic_phi   = 90,      
+        fdm_aircraft = 'f16',    
+        fdm_ic_v     = 500,      # Calibrated Velocity (knots) https://skybrary.aero/articles/calibrated-airspeed-cas#:~:text=Definition,port%20caused%20by%20airflow%20disruption).
+        fdm_ic_lat   = 0,        # Latitude (degree) 纬度
+        fdm_ic_long  = 0,        # Longitude (degree) 经度
+        fdm_ic_h     = 30005.5,  # Height above sea level (feet)
+        fdm_ic_psi   = 0,        # Yaw 偏航角，绕Z轴，JSBSim将按照这里列出的顺序进行欧拉角计算
+        fdm_ic_theta = 0,        # Pitch 俯仰角，绕Y轴
+        fdm_ic_phi   = 0,        # Roll 翻滚角，绕X轴
 
         fdm_hp       = 1,
         fdm_fgfs     = False,
@@ -40,15 +40,15 @@ class JsbsimEnv():
             self.fdm.set_output_directive('./data_output/flightgear{}.xml'.format(fdm_id))  
         
         # Velocity Initialization
-        self.fdm['ic/vc-kts'] = fdm_ic_v  # Calibrated Velocity (knots) https://skybrary.aero/articles/calibrated-airspeed-cas#:~:text=Definition,port%20caused%20by%20airflow%20disruption).
+        self.fdm['ic/vc-kts'] = fdm_ic_v  
 
         # Position Initialization
-        self.fdm["ic/lat-gc-deg"] = fdm_ic_lat  # Latitude (degree)
-        self.fdm["ic/long-gc-deg"] = fdm_ic_long  # Longitude (degree)
-        self.fdm["ic/h-sl-ft"] = fdm_ic_h  # Height above sea level (feet)
-        self.fdm["ic/psi-true-deg"] = fdm_ic_psi  # 偏航角，绕Z轴，JSBSim将按照这里列出的顺序进行欧拉角计算
-        self.fdm["ic/theta-deg"] = fdm_ic_theta  # 俯仰角，绕Y轴
-        self.fdm["ic/phi-deg"] = fdm_ic_phi  # 翻滚角，绕X轴
+        self.fdm["ic/lat-gc-deg"] = fdm_ic_lat  
+        self.fdm["ic/long-gc-deg"] = fdm_ic_long  
+        self.fdm["ic/h-sl-ft"] = fdm_ic_h  
+        self.fdm["ic/psi-true-deg"] = fdm_ic_psi
+        self.fdm["ic/theta-deg"] = fdm_ic_theta
+        self.fdm["ic/phi-deg"] = fdm_ic_phi
 
         ##########################
         ## Model Initialization ##
@@ -78,8 +78,8 @@ class JsbsimEnv():
     ) -> list:
         if prop == 'position':
             prop = [
-                "position/lat-gc-deg",  # Latitude 经度
-                "position/long-gc-deg",  # Longitude 纬度
+                "position/lat-gc-deg",  # Latitude 纬度
+                "position/long-gc-deg",  # Longitude 经度
                 "position/h-sl-ft",  # Altitude above sea level 海拔
             ]
         elif prop == 'positionEci':  # Earth-centered inertial
@@ -87,6 +87,12 @@ class JsbsimEnv():
                 "position/eci-x-ft",  # 指向经纬度为0的点
                 "position/eci-y-ft",  # 左手系决定
                 "position/eci-z-ft",  # 指向北极点
+            ]
+        elif prop == 'positionEcef':
+            prop = [
+                "position/ecef-x-ft",
+                "position/ecef-y-ft",
+                "position/ecef-z-ft",
             ]
         elif prop == 'attitudeRad':
             prop = [
@@ -162,9 +168,20 @@ class DogfightEnv():
         self,
     ) -> None:
         self.fdm = [
-            JsbsimEnv(1),
-            JsbsimEnv(2),
+            JsbsimEnv(
+                fdm_id=1,
+                fdm_fgfs=True,
+            ),
+
+            JsbsimEnv(
+                fdm_id=2,
+                fdm_aircraft='f16_1',
+                fdm_ic_lat=0.01,
+                fdm_ic_psi=180,
+                fdm_fgfs=True,
+            ),
         ]
+        self.file = open('./log/tracelog.txt', 'w', encoding='UTF-8')
 
     def getFdm(
         self,
@@ -233,10 +250,13 @@ class DogfightEnv():
 
     def terminate(self):
         if self.getFdm(1).getHP() <= 0 and self.getFdm(2).getHP() > 0:
+            self.file.close()
             return 2
         elif self.getFdm(2).getHP() <= 0 and self.getFdm(1).getHP() > 0:
+            self.file.close()
             return 1
         elif self.getFdm(1).getHP() <= 0 and self.getFdm(2).getHP() <= 0:
+            self.file.close()
             return -1
         else:
             return 0
@@ -247,6 +267,10 @@ class DogfightEnv():
         return self.getFdm(1).getNof()
 
     def step(self, playSpeed=0):
+        
+        print("nof: {}".format(self.getNof()))
+        print("*Distance: \t{}".format(self.getDistance()))
+        print("**HP: {0[0]}\t\t{0[1]}\n".format(self.getHP()))
 
         self.getFdm(1).step()
         self.getFdm(2).step()
@@ -255,6 +279,15 @@ class DogfightEnv():
 
         if self.getNof() >= 1000:
             return -1
+
+        self.file.write("{} {} {} {} {} {}\n".format(
+            self.getFdm(1).getProperty("positionEcef")[0],
+            self.getFdm(1).getProperty("positionEcef")[1],
+            self.getFdm(1).getProperty("positionEcef")[2],
+            self.getFdm(2).getProperty("positionEcef")[0],
+            self.getFdm(2).getProperty("positionEcef")[1],
+            self.getFdm(2).getProperty("positionEcef")[2],
+        ))
 
         if playSpeed != 0:
             time.sleep(self.getFdm(1).get_delta_t() / playSpeed)

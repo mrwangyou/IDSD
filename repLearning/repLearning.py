@@ -22,7 +22,6 @@ class IDSDRep():
         oppo_y = self.env.getFdm(id^3).getProperty('positionEci')[2]
         oppo_s = torch.Tensor(self.env.getFdm(id^3).getProperty('velocity') + \
             self.env.getFdm(id^3).getProperty('pose')).squeeze(dim=0)  # A Tensor of size [1, 9]
-        print(self.env.getDistance())
 
         if abs(oppo_x - ego_x) > ftpg * 24 or abs(oppo_y - ego_y) > ftpg * 24:
             # raise Exception("Plane out of range!", abs(oppo_x - ego_x), abs(oppo_y - ego_y), ftpg * 24)

@@ -76,7 +76,7 @@ class IDSD():
 
             rep1 = Representation(env)
             rep2 = Representation(env)
-            rl1 = rep1.getRepresentation('IDSD', self.model, device, 1) + torch.cat([torch.rand([1, 4]) / 3, torch.zeros([1, 1])], dim=1).to(device)
+            rl1 = rep1.getRepresentation('IDSD', self.model, device, 1) + torch.cat([torch.rand([1, 4]) / 2, torch.zeros([1, 1])], dim=1).to(device)
             rl2 = rep2.getRepresentation('IDSD', self.model, device, 2)
             if env.getNof() % 12 == 0:
                 if wins_record1 == []:
@@ -150,7 +150,7 @@ class IDSD():
 
     def train(
         self,
-        epochs=10,
+        epochs=20000,
         cuda='0',
         optimizer='SGD',
         lr=1e-2,
@@ -177,6 +177,7 @@ if __name__ == '__main__':
 
     model.train(
         cuda='3',
+        epochs=1
     )
 
     
