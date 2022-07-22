@@ -170,15 +170,15 @@ class DogfightEnv():
         self.fdm = [
             JsbsimEnv(
                 fdm_id=1,
-                fdm_fgfs=True,
+                fdm_fgfs=False,
             ),
 
             JsbsimEnv(
                 fdm_id=2,
                 fdm_aircraft='f16_1',
-                fdm_ic_lat=0.01,
+                fdm_ic_lat=0.005,
                 fdm_ic_psi=180,
-                fdm_fgfs=True,
+                fdm_fgfs=False,
             ),
         ]
         self.file = open('./log/tracelog.txt', 'w', encoding='UTF-8')

@@ -28,7 +28,7 @@ class DogfightDataset(Dataset):
         label,  # of size [num_of data]
     ):
         self.status = status
-        self.property = property 
+        self.property = property
         self.label = label
 
     def __len__(self):
@@ -44,16 +44,20 @@ class DogfightDataset(Dataset):
 
 class IDSD():
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        modelPath='/data/wnn_data/bestModel/',
+    ) -> None:
         from repLearning.cnn import Model
         self.model = Model(
             
         )
-        if not os.path.exists('/data/wnn_data/bestModel'):
-            os.mkdir('/data/wnn_data/bestModel')
-        if os.listdir('/data/wnn_data/bestModel') != []:
+        self.modelPath = modelPath
+        if not os.path.exists(self.modelPath):
+            os.mkdir(self.modelPath)
+        if os.listdir(self.modelPath) != []:
             try:
-                self.model.load_state_dict(torch.load('/data/wnn_data/bestModel/Epoch.pt'))
+                self.model.load_state_dict(torch.load(self.modelPath + 'Epoch.pt'))
             except:
                 print("Model Loading Error!")
                 time.sleep(1)
@@ -167,7 +171,7 @@ class IDSD():
             raise Exception("Optimizer {} doesn't exist.".format(optimizer))
         for _ in tqdm(range(epochs)):
             self.episode(device, optimizer)
-            torch.save(self.model.state_dict(), '/data/wnn_data/bestModel/Epoch.pt')
+            torch.save(self.model.state_dict(), self.modelPath + 'Epoch.pt')
 
 
 if __name__ == '__main__':
@@ -177,7 +181,6 @@ if __name__ == '__main__':
 
     model.train(
         cuda='3',
-        epochs=1
     )
 
     
