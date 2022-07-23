@@ -70,7 +70,7 @@ class Critic(nn.Module):
         hidden_dim_3=64,
         dropout=.5,
     ):
-        super(Actor, self).__init__()
+        super(Critic, self).__init__()
 
         self.fc1 = nn.Linear(status_dim + num_of_actions, hidden_dim_1)
         self.relu = nn.ReLU(True)
@@ -98,7 +98,7 @@ class Critic(nn.Module):
         return q
 
 
-class DDPG(nn.Module):
+class ActorCritic():
     
     def __init__(self):
         self.actor = Actor()
@@ -111,11 +111,11 @@ class DDPG(nn.Module):
         return self.critic(status, action)
 
 
-class Train():
+class DDPG():
 
     def __init__(self) -> None:
-        self.model = DDPG()
-        self.target_model = DDPG()
+        self.model = ActorCritic()
+        self.target_model = ActorCritic()
 
     def _critic_learn(
         self, 
