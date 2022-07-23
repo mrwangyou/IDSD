@@ -103,7 +103,13 @@ class ActorCritic():
     def __init__(self):
         self.actor = Actor()
         self.critic = Critic()
-        
+    
+    def getActor(self):
+        return self.actor
+    
+    def getCritic(self):
+        return self.critic
+
     def policy(self, status):  # Get action through Actor()
         return self.actor(status)
     
@@ -154,10 +160,62 @@ class DDPG():
 
         # return loss
 
-    def sync_target(self, decay=0):
+    def sync_target(self, decay=.9):
+
+        for target_param, source_param in zip(self.target_model.getActor().parameters(), self.model.getActor().parameters()):
+            target_param.data.copy_((1-decay) * target_param.data + decay * source_param.data)
+        for target_param, source_param in zip(self.target_model.getCritic().parameters(), self.model.getCritic().parameters()):
+            target_param.data.copy_((1-decay) * target_param.data + decay * source_param.data)
+
+    def getStatus(
+        self,
+        env
+    ):
+        return torch.Tensor([20])
+
+    def getReward(
+        self,
+        status,
+        action
+    ):
         pass
 
+    def episode(
+        self,
+        device,
+        optimizer,
+    ):
+        env = Env()
+        print("**********Nof: {}**********".format(env.getNof()))
 
-    
+        while True:
+            terminate = env.step(playSpeed=0)
+            if terminate != 0:
+                break
+            
+            status_1 = self.getStatus(env.getFdm(1))
+            status_2 = self.getStatus(env.getFdm(2))
+            action_1 = self.model.policy(self.getStatus(env.getFdm(1)))
+            action_2 = self.model.policy(self.getStatus(env.getFdm(2)))
 
-    
+            env.getFdm(1).sendAction(action_1)
+            env.getFdm(2).sendAction(action_2)
+        
+            self._critic_learn(status_1, action_1, )
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    ddpg = DDPG()
+    ddpg.sync_target()
+
+
+
+
+
