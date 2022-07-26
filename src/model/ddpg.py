@@ -131,7 +131,7 @@ class DDPG():
 
         # target_q = reward if terminate else reward + self.gamma * next_q
         target_q = target_q.detach()
-
+        
         q = self.model_critic(status, action.detach())
         loss_fn = nn.MSELoss()
         loss = loss_fn(q, target_q)
@@ -186,13 +186,61 @@ class DDPG():
         # raise Exception("Hasn't finished yet.")
         return torch.rand([10])
 
+    def R_rp(
+        self,
+        env,
+        id
+    ):
+        reward = 0
+        attitude1 = env.getFdm(1).getProperty("attitudeRad")  # A list of size [3]
+        attitude2 = env.getFdm(2).getProperty("attitudeRad")  # A list of size [3]
+        
+        theta_1 = np.pi / 2 - attitude1[1]
+        psi_1 = np.pi / 2 - attitude1[0]
+        heading_1 = np.array([
+            np.cos(theta_1),
+            np.sin(theta_1) * np.cos(psi_1),
+            np.sin(theta_1) * np.sin(psi_1),
+        ])
+
+        theta_2 = np.pi / 2 - attitude2[1]
+        psi_2 = np.pi / 2 - attitude2[0]
+        heading_2 = np.array([
+            np.cos(theta_2),
+            np.sin(theta_2) * np.cos(psi_2),
+            np.sin(theta_2) * np.sin(psi_2),
+        ])
+
+        angle1 = np.arcsin(
+            np.linalg.norm(np.cross(env.getDistanceVector(ego=1), heading_1)) /
+            (env.getDistance() * np.linalg.norm(heading_1))
+        ) / np.pi * 180
+
+        angle2 = np.arcsin(
+            np.linalg.norm(np.cross(env.getDistanceVector(ego=2), heading_2)) /
+            (env.getDistance() * np.linalg.norm(heading_2))
+        ) / np.pi * 180
+
+
+        if -1 <= angle1 / np.pi * 180 <= 1:
+            env.getFdm(2).damage((3000 - env.getDistance()) / 2500 / 120)
+
+        if -1 <= angle2 / np.pi * 180 <= 1:
+            env.getFdm(1).damage((3000 - env.getDistance()) / 2500 / 120)
+
     def getReward(
         self,
-        status,
-        action
+        env,
+        action,
+        id
     ):
-        # raise Exception("Hasn't finished yet")
-        return 3.18
+        R_rp = 
+
+
+
+
+
+
 
     def episode(
         self,
@@ -218,8 +266,8 @@ class DDPG():
             status_2 = self.getStatus(env, 2)
             action_1 = self.model_actor(self.getStatus(env, 1).to(device))
             action_2 = self.model_actor(self.getStatus(env, 2).to(device))
-            reward_1 = self.getReward(status_1, action_1)
-            reward_2 = self.getReward(status_2, action_2)
+            reward_1 = self.getReward(env, action_1)  # 当前状态下的状态价值函数
+            reward_2 = self.getReward(env, action_2)  # 当前状态下的状态价值函数
 
             env.getFdm(1).sendAction(action_1.unsqueeze(0))
             env.getFdm(2).sendAction(action_2.unsqueeze(0))
@@ -233,11 +281,11 @@ class DDPG():
 
             self._actor_learn(pre_status_1, 1)
 
-            self._critic_learn(pre_status_1, pre_action_1, pre_reward_1, status_1, pre_terminate, 1)
+            self._critic_learn(pre_status_1, pre_action_1, reward_1, status_1, pre_terminate, 1)
 
             self._actor_learn(pre_status_2, 1)
 
-            self._critic_learn(pre_status_2, pre_action_2, pre_reward_2, status_2, pre_terminate, 1)
+            self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate, 1)
             
             pre_status_1 = status_1
             pre_status_2 = status_2
