@@ -16,6 +16,7 @@ from tqdm import tqdm
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
 from src.simEnv.jsbsimEnv import DogfightEnv as Env
+from src.reward import reward
 
 
 class Actor(nn.Module):
@@ -186,55 +187,19 @@ class DDPG():
         # raise Exception("Hasn't finished yet.")
         return torch.rand([10])
 
-    def R_rp(
-        self,
-        env,
-        id
-    ):
-        reward = 0
-        attitude1 = env.getFdm(1).getProperty("attitudeRad")  # A list of size [3]
-        attitude2 = env.getFdm(2).getProperty("attitudeRad")  # A list of size [3]
-        
-        theta_1 = np.pi / 2 - attitude1[1]
-        psi_1 = np.pi / 2 - attitude1[0]
-        heading_1 = np.array([
-            np.cos(theta_1),
-            np.sin(theta_1) * np.cos(psi_1),
-            np.sin(theta_1) * np.sin(psi_1),
-        ])
-
-        theta_2 = np.pi / 2 - attitude2[1]
-        psi_2 = np.pi / 2 - attitude2[0]
-        heading_2 = np.array([
-            np.cos(theta_2),
-            np.sin(theta_2) * np.cos(psi_2),
-            np.sin(theta_2) * np.sin(psi_2),
-        ])
-
-        angle1 = np.arcsin(
-            np.linalg.norm(np.cross(env.getDistanceVector(ego=1), heading_1)) /
-            (env.getDistance() * np.linalg.norm(heading_1))
-        ) / np.pi * 180
-
-        angle2 = np.arcsin(
-            np.linalg.norm(np.cross(env.getDistanceVector(ego=2), heading_2)) /
-            (env.getDistance() * np.linalg.norm(heading_2))
-        ) / np.pi * 180
-
-
-        if -1 <= angle1 / np.pi * 180 <= 1:
-            env.getFdm(2).damage((3000 - env.getDistance()) / 2500 / 120)
-
-        if -1 <= angle2 / np.pi * 180 <= 1:
-            env.getFdm(1).damage((3000 - env.getDistance()) / 2500 / 120)
 
     def getReward(
         self,
         env,
-        action,
         id
     ):
-        R_rp = 
+        r_rp = reward.R_rp(env, id)
+        r_closure = reward.R_closure(env, id)
+        r_gunsnap = reward.R_gunsnap(env, id)
+        r_deck = reward.R_deck(env, id)
+        r_too_close = reward.R_too_close(env, id)
+
+        return r_rp + r_closure + r_gunsnap + r_deck + r_too_close
 
 
 
@@ -266,8 +231,8 @@ class DDPG():
             status_2 = self.getStatus(env, 2)
             action_1 = self.model_actor(self.getStatus(env, 1).to(device))
             action_2 = self.model_actor(self.getStatus(env, 2).to(device))
-            reward_1 = self.getReward(env, action_1)  # 当前状态下的状态价值函数
-            reward_2 = self.getReward(env, action_2)  # 当前状态下的状态价值函数
+            reward_1 = self.getReward(env, 1)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
+            reward_2 = self.getReward(env, 2)
 
             env.getFdm(1).sendAction(action_1.unsqueeze(0))
             env.getFdm(2).sendAction(action_2.unsqueeze(0))
@@ -312,8 +277,8 @@ class DDPG():
 
 
 if __name__ == "__main__":
-    ddpg = DDPG(cuda='3')
-    ddpg.train(cuda='3')
+    ddpg = DDPG(cuda='0')
+    ddpg.train(cuda='0')
 
 
 

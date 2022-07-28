@@ -3,6 +3,7 @@ import os
 import random
 import sys
 import time
+from turtle import position
 
 import jsbsim
 import numpy as np
@@ -77,6 +78,7 @@ class JsbsimEnv():
         prop,
     ) -> list:
         if prop == 'position':
+            print(self.fdm["position/lat-gc-deg"])
             prop = [
                 "position/lat-gc-deg",  # Latitude 纬度
                 "position/long-gc-deg",  # Longitude 经度
@@ -170,15 +172,15 @@ class DogfightEnv():
         self.fdm = [
             JsbsimEnv(
                 fdm_id=1,
-                fdm_fgfs=False,
+                fdm_fgfs=True,
             ),
 
             JsbsimEnv(
                 fdm_id=2,
-                fdm_aircraft='f16_1',
+                fdm_aircraft='f16',
                 fdm_ic_lat=0.005,
                 fdm_ic_psi=180,
-                fdm_fgfs=False,
+                fdm_fgfs=True,
             ),
         ]
         self.file = open('./log/tracelog.txt', 'w', encoding='UTF-8')
@@ -195,6 +197,10 @@ class DogfightEnv():
     def getDistanceVector(self, ego):
         positionEci1 = self.getFdm(1).getProperty("positionEci")  # A list of size [3]
         positionEci2 = self.getFdm(2).getProperty("positionEci")  # A list of size [3]
+        # print('***{}'.format(np.array(positionEci1)))
+        # print('***{}'.format(np.array(positionEci2)))
+        # if np.isnan(positionEci1[0]):
+        #     raise Exception(positionEci1, np.array(positionEci1))
         if ego == 1:
             return np.array(positionEci2) - np.array(positionEci1)
         elif ego == 2:
@@ -232,21 +238,32 @@ class DogfightEnv():
         ])
 
         if 500 <= self.getDistance() <= 3000:
-            angle1 = np.arcsin(
-                np.linalg.norm(np.cross(self.getDistanceVector(ego=1), heading_1)) /
+            # angle1 = np.arcsin(
+            #     np.linalg.norm(np.cross(self.getDistanceVector(ego=1), heading_1)) /
+            #     (self.getDistance() * np.linalg.norm(heading_1))
+            # )
+
+            angle1 = np.arccos(
+                np.dot(self.getDistanceVector(ego=1), heading_1) / 
                 (self.getDistance() * np.linalg.norm(heading_1))
             )
 
             if -1 <= angle1 / np.pi * 180 <= 1:
                 self.getFdm(2).damage((3000 - self.getDistance()) / 2500 / 120)
 
-            angle2 = np.arcsin(
-                np.linalg.norm(np.cross(self.getDistanceVector(ego=2), heading_2)) /
+            # angle2 = np.arcsin(
+            #     np.linalg.norm(np.cross(self.getDistanceVector(ego=2), heading_2)) /
+            #     (self.getDistance() * np.linalg.norm(heading_2))
+            # )
+
+            angle2 = np.arccos(
+                np.dot(self.getDistanceVector(ego=2), heading_2) / 
                 (self.getDistance() * np.linalg.norm(heading_2))
             )
 
             if -1 <= angle2 / np.pi * 180 <= 1:
                 self.getFdm(1).damage((3000 - self.getDistance()) / 2500 / 120)
+        
 
     def terminate(self):
         if self.getFdm(1).getHP() <= 0 and self.getFdm(2).getHP() > 0:
