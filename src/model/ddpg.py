@@ -277,8 +277,8 @@ class DDPG():
 
 
 if __name__ == "__main__":
-    ddpg = DDPG(cuda='0')
-    ddpg.train(cuda='0')
+    ddpg = DDPG(cuda='3')
+    ddpg.train(cuda='3')
 
 
 
