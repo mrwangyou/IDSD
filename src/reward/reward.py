@@ -34,9 +34,9 @@ def R_rp(
         np.dot(env.getDistanceVector(ego=2), heading_2) / 
         (env.getDistance() * np.linalg.norm(heading_2))
     ) / np.pi * 180
-
+    print("Angle: {}\t{}".format(angle1, angle2))
     reward = reward + -np.abs(angle1) / 180 + 1
-    reward = reward - -np.abs(angle2) / 180 + 1
+    reward = reward - -np.abs(angle2) / 180 - 1
 
     if id == 2:
         reward = -reward
@@ -152,9 +152,9 @@ def R_too_close(
     distance = env.getDistance()
 
     if id == 1 and distance <= 500:
-        reward = -(500 - distance)
+        reward = -(500 - distance) / 500
     if id == 2 and distance <= 500:
-        reward = -(500 - distance)
+        reward = -(500 - distance) / 500
 
     return reward
 

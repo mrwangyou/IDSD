@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import time
@@ -15,8 +16,15 @@ from tqdm import tqdm
 
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
-from src.simEnv.jsbsimEnv import DogfightEnv as Env
 from src.reward import reward
+from src.simEnv.jsbsimEnv import DogfightEnv as Env
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='123')
+    parser.add_argument('--cuda', default='3', metavar='int', help='specifies the GPU to be used')
+    parser.add_argument('--playSpeed', default='0', metavar='double', help='specifies to run in real world time')
+    args = parser.parse_args()
+    return args
 
 
 class Actor(nn.Module):
@@ -115,7 +123,6 @@ class DDPG():
         reward, 
         next_status, 
         terminate,
-        step,
     ):
         self.model_critic.train()
         self.gamma = .9
@@ -139,15 +146,13 @@ class DDPG():
         # print("/*/*{}".format(loss))
         self.model_critic.zero_grad()
         loss.backward()
-        if step:
-            self.optimizer.step()
+        self.optimizer.step()
 
         # return loss
 
     def _actor_learn(
         self,
         status,
-        step,
     ):
         self.model_actor.train()
         self.weight_decay = 1e-2
@@ -163,8 +168,7 @@ class DDPG():
         # loss.requires_grad_(True)
         self.model_actor.zero_grad()
         loss.backward()
-        if step:
-            self.optimizer.step()
+        self.optimizer.step()
 
         # return loss
 
@@ -198,18 +202,14 @@ class DDPG():
         r_gunsnap = reward.R_gunsnap(env, id)
         r_deck = reward.R_deck(env, id)
         r_too_close = reward.R_too_close(env, id)
-
+        print("*Reward: {}\t{}\t{}\t{}\t{}".format(r_rp, r_closure, r_gunsnap, r_deck, r_too_close))
         return r_rp + r_closure + r_gunsnap + r_deck + r_too_close
-
-
-
-
-
 
 
     def episode(
         self,
         device,
+        playSpeed,
     ):
         env = Env()
         print("**********Nof: {}**********".format(env.getNof()))
@@ -223,7 +223,7 @@ class DDPG():
         pre_terminate = 0
 
         while True:
-            terminate = env.step(playSpeed=0)
+            terminate = env.step(playSpeed=playSpeed)
             if terminate != 0:
                 break
             
@@ -244,13 +244,13 @@ class DDPG():
             status_1 = status_1.to(device)
             status_2 = status_2.to(device)
 
-            self._actor_learn(pre_status_1, 1)
+            self._actor_learn(pre_status_1)
 
-            self._critic_learn(pre_status_1, pre_action_1, reward_1, status_1, pre_terminate, 1)
+            self._critic_learn(pre_status_1, pre_action_1, reward_1, status_1, pre_terminate)
 
-            self._actor_learn(pre_status_2, 1)
+            self._actor_learn(pre_status_2)
 
-            self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate, 1)
+            self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate)
             
             pre_status_1 = status_1
             pre_status_2 = status_2
@@ -266,19 +266,28 @@ class DDPG():
         self,
         epochs=20000,
         cuda='0',
+        playSpeed=0,
     ):
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
 
         for _ in tqdm(range(epochs)):
-            self.episode(device)
+            self.episode(device, playSpeed)
 
 
 
 
 
 if __name__ == "__main__":
-    ddpg = DDPG(cuda='3')
-    ddpg.train(cuda='3')
+    args = parse_args()
+
+    ddpg = DDPG(
+        args.cuda,
+    )
+
+    ddpg.train(
+        args.cuda,
+        args.playSpeed,
+    )
 
 
 

@@ -78,7 +78,6 @@ class JsbsimEnv():
         prop,
     ) -> list:
         if prop == 'position':
-            print(self.fdm["position/lat-gc-deg"])
             prop = [
                 "position/lat-gc-deg",  # Latitude 纬度
                 "position/long-gc-deg",  # Longitude 经度
@@ -140,8 +139,10 @@ class JsbsimEnv():
             "fcs/rudder-cmd-norm",
             "fcs/throttle-cmd-norm",
         ]
-
         for i in range(len(action_space)):
+            if np.isnan(action[0][i].cpu().detach()):
+                raise Exception(action)
+            print("{}\t{}\t{}".format(i, action_space[i], action[0][i]))
             self.fdm[action_space[i]] = action[0][i]
 
     def getHP(self):  # Health point
@@ -162,6 +163,9 @@ class JsbsimEnv():
             return 1
         else:
             return 0
+    
+    def getFdm(self):
+        return self.fdm
 
 
 class DogfightEnv():
@@ -307,7 +311,7 @@ class DogfightEnv():
         ))
 
         if playSpeed != 0:
-            time.sleep(self.getFdm(1).get_delta_t() / playSpeed)
+            time.sleep(self.getFdm(1).getFdm().get_delta_t() / playSpeed)
 
         return self.terminate()
 
