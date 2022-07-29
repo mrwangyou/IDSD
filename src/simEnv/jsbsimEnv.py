@@ -122,6 +122,10 @@ class JsbsimEnv():
                 "velocities/v-east-fps",
                 "velocities/v-down-fps",
             ]
+        elif prop == 'acceleration':
+            prop = [
+
+            ]
         else:
             return self.fdm[prop]
 
@@ -140,9 +144,6 @@ class JsbsimEnv():
             "fcs/throttle-cmd-norm",
         ]
         for i in range(len(action_space)):
-            if np.isnan(action[0][i].cpu().detach()):
-                raise Exception(action)
-            print("{}\t{}\t{}".format(i, action_space[i], action[0][i]))
             self.fdm[action_space[i]] = action[0][i]
 
     def getHP(self):  # Health point
@@ -182,8 +183,8 @@ class DogfightEnv():
             JsbsimEnv(
                 fdm_id=2,
                 fdm_aircraft='f16_1',
-                fdm_ic_lat=0.005,
-                fdm_ic_psi=180,
+                fdm_ic_long=0.005,
+                fdm_ic_psi=0,
                 fdm_fgfs=False,
             ),
         ]
@@ -298,7 +299,7 @@ class DogfightEnv():
 
         self.damage()
 
-        if self.getNof() >= 1000:
+        if self.getNof() >= 2000:
             return -1
 
         self.file.write("{} {} {} {} {} {}\n".format(

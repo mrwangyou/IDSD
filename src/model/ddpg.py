@@ -21,8 +21,8 @@ from src.simEnv.jsbsimEnv import DogfightEnv as Env
 
 def parse_args():
     parser = argparse.ArgumentParser(description='123')
-    parser.add_argument('--cuda', default='3', metavar='int', help='specifies the GPU to be used')
-    parser.add_argument('--playSpeed', default='0', metavar='double', help='specifies to run in real world time')
+    parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
+    parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
     args = parser.parse_args()
     return args
 
@@ -31,7 +31,7 @@ class Actor(nn.Module):
 
     def __init__(
         self,
-        status_dim=10,
+        status_dim=21,
         hidden_dim_1=64,
         hidden_dim_2=64,
         hidden_dim_3=64,
@@ -70,7 +70,7 @@ class Critic(nn.Module):
 
     def __init__(
         self,
-        status_dim=10,
+        status_dim=21,
         num_of_actions=4,  # temporary
         hidden_dim_1=64,
         hidden_dim_2=64,
@@ -188,8 +188,26 @@ class DDPG():
         env,
         id
     ):  
-        # raise Exception("Hasn't finished yet.")
-        return torch.rand([10])
+        status = []
+        status.append(env.getFdm(id).getProperty("propulsion/total-fuel-lbs") / 3000)  # Ego_fuel
+        status.append(env.getFdm(id).getHP())  # Ego_hp
+        status.append(env.getFdm(id^3).getHP())  # Oppo_hp
+
+        status = status + env.getFdm(id).getProperty("attitudeRad")  # Euler angle
+        status = status + env.getFdm(id).getProperty("position")[0:2]  # Location
+        status.append((env.getFdm(id).getProperty("position")[2] - 30000) / 1000)  # Height
+        status.append(env.getFdm(id).getProperty("velocity")[0] / 500)  # Velocity
+        status.append(env.getFdm(id).getProperty("velocity")[1] / 500)  # Velocity
+        status.append(env.getFdm(id).getProperty("velocity")[2] / 500)  # Velocity
+
+        status = status + env.getFdm(id^3).getProperty("attitudeRad")
+        status = status + env.getFdm(id^3).getProperty("position")[0:2]
+        status.append((env.getFdm(id^3).getProperty("position")[2] - 30000) / 1000)
+        status.append(env.getFdm(id^3).getProperty("velocity")[0] / 500)
+        status.append(env.getFdm(id^3).getProperty("velocity")[1] / 500)
+        status.append(env.getFdm(id^3).getProperty("velocity")[2] / 500)
+
+        return torch.Tensor(status)
 
 
     def getReward(
@@ -214,10 +232,10 @@ class DDPG():
         env = Env()
         print("**********Nof: {}**********".format(env.getNof()))
         
-        pre_status_1 = torch.zeros([10])
+        pre_status_1 = torch.zeros([21])
         pre_action_1 = torch.zeros([4])
         pre_reward_1 = 0
-        pre_status_2 = torch.zeros([10])
+        pre_status_2 = torch.zeros([21])
         pre_action_2 = torch.zeros([4])
         pre_reward_2 = 0
         pre_terminate = 0
@@ -272,6 +290,7 @@ class DDPG():
 
         for _ in tqdm(range(epochs)):
             self.episode(device, playSpeed)
+            # torch.save(self.model.state_dict(), self.modelPath + 'Epoch.pt')
 
 
 
@@ -281,12 +300,12 @@ if __name__ == "__main__":
     args = parse_args()
 
     ddpg = DDPG(
-        args.cuda,
+        cuda=args.cuda,
     )
 
     ddpg.train(
-        args.cuda,
-        args.playSpeed,
+        cuda=args.cuda,
+        playSpeed=args.playSpeed,
     )
 
 
