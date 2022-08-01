@@ -252,6 +252,8 @@ class DDPG():
             reward_1 = self.getReward(env, 1)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
             reward_2 = self.getReward(env, 2)
 
+            action_1 = action_1 + torch.rand([4]).to(device) - 0.5
+
             env.getFdm(1).sendAction(action_1.unsqueeze(0))
             env.getFdm(2).sendAction(action_2.unsqueeze(0))
 
@@ -307,6 +309,30 @@ if __name__ == "__main__":
         cuda=args.cuda,
         playSpeed=args.playSpeed,
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

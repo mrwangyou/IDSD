@@ -138,11 +138,13 @@ def R_deck(
     altitude2 = env.getFdm(2).getProperty("position")[2]  # A list of size [3]
 
     if id == 1 and altitude1 <= 10000:
-        reward = -(10000 - altitude1)
+        reward = -(10000 - altitude1) / 100
     if id == 2 and altitude2 <= 10000:
-        reward = -(10000 - altitude2)
-
-    return reward
+        reward = -(10000 - altitude2) / 100
+    try:
+        return max(reward, -10)
+    except:
+        raise Exception(reward)
 
 def R_too_close(
     env,
@@ -152,11 +154,11 @@ def R_too_close(
     distance = env.getDistance()
 
     if id == 1 and distance <= 500:
-        reward = -(500 - distance) / 500
+        reward = -(500 - distance) / 500, -10
     if id == 2 and distance <= 500:
-        reward = -(500 - distance) / 500
+        reward = -(500 - distance) / 500, -10
 
-    return reward
+    return max(reward, -10)
 
 
 

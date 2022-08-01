@@ -299,7 +299,7 @@ class DogfightEnv():
 
         self.damage()
 
-        if self.getNof() >= 2000:
+        if self.getNof() >= 12000:
             return -1
 
         self.file.write("{} {} {} {} {} {}\n".format(
