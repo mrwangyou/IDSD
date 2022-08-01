@@ -22,6 +22,8 @@ from src.simEnv.jsbsimEnv import DogfightEnv as Env
 def parse_args():
     parser = argparse.ArgumentParser(description='123')
     parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
+    parser.add_argument('--fgfs_1', action='store_true', help='specifies the rendering in FlightGear')
+    parser.add_argument('--fgfs_2', action='store_true', help='specifies the rendering in FlightGear')
     parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
     args = parser.parse_args()
     return args
@@ -227,9 +229,14 @@ class DDPG():
     def episode(
         self,
         device,
+        fgfs_1,
+        fgfs_2,
         playSpeed,
     ):
-        env = Env()
+        env = Env(
+            fgfs_1,
+            fgfs_2
+        )
         print("**********Nof: {}**********".format(env.getNof()))
         
         pre_status_1 = torch.zeros([21])
@@ -286,12 +293,14 @@ class DDPG():
         self,
         epochs=20000,
         cuda='0',
+        fgfs_1=False,
+        fgfs_2=False,
         playSpeed=0,
     ):
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
 
         for _ in tqdm(range(epochs)):
-            self.episode(device, playSpeed)
+            self.episode(device, fgfs_1, fgfs_2, playSpeed)
             # torch.save(self.model.state_dict(), self.modelPath + 'Epoch.pt')
 
 
@@ -307,6 +316,8 @@ if __name__ == "__main__":
 
     ddpg.train(
         cuda=args.cuda,
+        fgfs_1=args.fgfs_1,
+        fgfs_2=args.fgfs_2,
         playSpeed=args.playSpeed,
     )
 

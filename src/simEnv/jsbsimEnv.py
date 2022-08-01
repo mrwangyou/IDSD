@@ -36,9 +36,9 @@ class JsbsimEnv():
         # Aircraft Loading
         self.fdm.load_model(fdm_aircraft)  
         
-        # Visualization fgfs Port 5550
+        # Visualization fgfs Port 5550/5551
         if fdm_fgfs is True:
-            self.fdm.set_output_directive('./data_output/flightgear{}.xml'.format(fdm_id))  
+            self.fdm.set_output_directive('./data_output/flightgear{}.xml'.format(fdm_id))
         
         # Velocity Initialization
         self.fdm['ic/vc-kts'] = fdm_ic_v  
@@ -176,19 +176,21 @@ class DogfightEnv():
 
     def __init__(
         self,
+        fgfs_1=False,
+        fgfs_2=False,
     ) -> None:
         self.fdm = [
             JsbsimEnv(
                 fdm_id=1,
-                fdm_fgfs=False,
+                fdm_fgfs=fgfs_1,
             ),
 
             JsbsimEnv(
                 fdm_id=2,
-                fdm_aircraft='f16_1',
-                fdm_ic_long=0.005,
+                # fdm_aircraft='f16_1',
+                fdm_ic_lat=0.003,
                 fdm_ic_psi=0,
-                fdm_fgfs=False,
+                fdm_fgfs=fgfs_2,
             ),
         ]
         self.file = open('./log/tracelog.txt', 'w', encoding='UTF-8')
@@ -303,6 +305,11 @@ class DogfightEnv():
         self.damage()
 
         if self.getNof() >= 12000:
+            return -1
+        
+        if self.getFdm(1).getProperty("position")[2] <= 1000:
+            return -1
+        if self.getFdm(2).getProperty("position")[2] <= 1000:
             return -1
 
         self.file.write("{} {} {} {} {} {}\n".format(

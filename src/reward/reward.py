@@ -154,9 +154,9 @@ def R_too_close(
     distance = env.getDistance()
 
     if id == 1 and distance <= 500:
-        reward = -(500 - distance) / 500, -10
+        reward = -(500 - distance) / 500
     if id == 2 and distance <= 500:
-        reward = -(500 - distance) / 500, -10
+        reward = -(500 - distance) / 500
 
     return max(reward, -10)
 
