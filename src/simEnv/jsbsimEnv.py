@@ -66,7 +66,7 @@ class JsbsimEnv():
         # First but not Initial
         self.fdm.run()
         self.fdm["propulsion/active_engine"] = True
-        self.fdm["propulsion/set-running"] = 0
+        self.fdm["propulsion/set-running"] = -1
 
         self.nof = 1  # Number of frames
 
@@ -298,6 +298,8 @@ class DogfightEnv():
         print("nof: {}".format(self.getNof()))
         print("*Distance: \t{}".format(self.getDistance()))
         print("**HP: {0[0]}\t\t{0[1]}\n".format(self.getHP()))
+        print("**Fuel: \t{}".format(self.getFdm(1).getProperty("propulsion/total-fuel-lbs")))
+        
 
         self.getFdm(1).step()
         self.getFdm(2).step()

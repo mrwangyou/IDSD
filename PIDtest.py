@@ -19,7 +19,14 @@ sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 from src.reward import reward
 from src.simEnv.jsbsimEnv import JsbsimEnv as Env
 
-
+def parse_args():
+    parser = argparse.ArgumentParser(description='123')
+    parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
+    parser.add_argument('--fgfs_1', action='store_true', help='specifies the rendering in FlightGear')
+    parser.add_argument('--fgfs_2', action='store_true', help='specifies the rendering in FlightGear')
+    parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
+    args = parser.parse_args()
+    return args
 
 
 
@@ -30,12 +37,27 @@ from src.simEnv.jsbsimEnv import JsbsimEnv as Env
 
 
 if __name__ == '__main__':
+    args = parse_args()
     env = Env(
-
+        fdm_fgfs=args.fgfs_1
     )
 
+    tmp = 1
+    c = 1
     while True:
-        env.step()
+        if c == 0:
+            print('err')
+        else:
+            print((env.getProperty('attitudeRad')[1] - tmp) / c)
+        c = env.getProperty('attitudeRad')[1] - tmp
+        tmp = env.getProperty('attitudeRad')[1]
+
+        # env.sendAction([[0, -.07, 0, 0]])
+        env.sendAction([[0, -1, 0, 0]])
+        env.step(playSpeed=1)
+
+        # print("{0[0]}\t{0[1]}\t{0[2]}".format(env.getProperty('attitudeRad')))
+
 
 
 
