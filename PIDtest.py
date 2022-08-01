@@ -29,5 +29,52 @@ from src.simEnv.jsbsimEnv import JsbsimEnv as Env
 
 
 
+if __name__ == '__main__':
+    env = Env(
+
+    )
+
+    while True:
+        env.step()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

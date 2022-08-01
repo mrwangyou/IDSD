@@ -155,9 +155,12 @@ class JsbsimEnv():
     def getNof(self):  # Number of frames
         return self.nof
     
-    def step(self):
+    def step(self, playSpeed=0):
         self.nof = self.nof + 1
         self.fdm.run()
+
+        if playSpeed != 0:
+            time.sleep(self.getFdm(1).getFdm().get_delta_t() / playSpeed)
 
     def terminate(self):  # Unused
         if self.fdm_hp <= 0:
