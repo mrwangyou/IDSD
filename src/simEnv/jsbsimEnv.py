@@ -103,9 +103,9 @@ class JsbsimEnv():
             ]
         elif prop == 'attitudeDeg':
             prop = [
-                "attitude/psi-deg",
-                "attitude/theta-deg",
-                "attitude/phi-deg",
+                "attitude/psi-deg",  # Yaw 偏航角
+                "attitude/theta-deg",  # Pitch 俯仰角
+                "attitude/phi-deg",  # Roll 翻滚角
             ]
         elif prop == 'pose':
             prop = [
@@ -138,10 +138,10 @@ class JsbsimEnv():
         action,
     ):
         action_space = [
-            "fcs/aileron-cmd-norm",
-            "fcs/elevator-cmd-norm",
-            "fcs/rudder-cmd-norm",
-            "fcs/throttle-cmd-norm",
+            "fcs/aileron-cmd-norm",  # 副翼
+            "fcs/elevator-cmd-norm",  # 升降舵
+            "fcs/rudder-cmd-norm",  # 方向舵
+            "fcs/throttle-cmd-norm",  # 节流阀
         ]
         for i in range(len(action_space)):
             self.fdm[action_space[i]] = action[0][i]
@@ -160,7 +160,7 @@ class JsbsimEnv():
         self.fdm.run()
 
         if playSpeed != 0:
-            time.sleep(self.getFdm(1).getFdm().get_delta_t() / playSpeed)
+            time.sleep(self.getFdm().get_delta_t() / playSpeed)
 
     def terminate(self):  # Unused
         if self.fdm_hp <= 0:
@@ -295,14 +295,13 @@ class DogfightEnv():
 
     def step(self, playSpeed=0):
         
-        print("nof: {}".format(self.getNof()))
-        print("*Distance: \t{}".format(self.getDistance()))
-        print("**HP: {0[0]}\t\t{0[1]}\n".format(self.getHP()))
-        print("**Fuel: \t{}".format(self.getFdm(1).getProperty("propulsion/total-fuel-lbs")))
-        
-
         self.getFdm(1).step()
         self.getFdm(2).step()
+
+        # print("nof: {}".format(self.getNof()))
+        # print("*Distance: \t{}".format(self.getDistance()))
+        # print("**HP: {0[0]}\t\t{0[1]}\n".format(self.getHP()))
+        # print("**Fuel: \t{}".format(self.getFdm(1).getProperty("propulsion/total-fuel-lbs")))
 
         self.damage()
 

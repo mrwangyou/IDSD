@@ -160,9 +160,11 @@ def R_too_close(
 
     return max(reward, -10)
 
-
-
-
-
-
+def R_win(
+    env,
+    id
+):
+    if env.getFdm(id^3).getHP() <= 0:
+        return 100
+    return 0
 

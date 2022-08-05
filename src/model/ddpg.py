@@ -20,7 +20,7 @@ from src.reward import reward
 from src.simEnv.jsbsimEnv import DogfightEnv as Env
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='123')
+    parser = argparse.ArgumentParser(description='TBD')
     parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
     parser.add_argument('--fgfs_1', action='store_true', help='specifies the rendering in FlightGear')
     parser.add_argument('--fgfs_2', action='store_true', help='specifies the rendering in FlightGear')
@@ -33,7 +33,7 @@ class Actor(nn.Module):
 
     def __init__(
         self,
-        status_dim=21,
+        status_dim=18,
         hidden_dim_1=64,
         hidden_dim_2=64,
         hidden_dim_3=64,
@@ -72,7 +72,7 @@ class Critic(nn.Module):
 
     def __init__(
         self,
-        status_dim=21,
+        status_dim=18,
         num_of_actions=4,  # temporary
         hidden_dim_1=64,
         hidden_dim_2=64,
@@ -111,12 +111,31 @@ class Critic(nn.Module):
 
 class DDPG():
 
-    def __init__(self, cuda) -> None:
+    def __init__(
+        self,
+        cuda=0,
+        modelPath='/data/wnn_data/bestModel/',
+    ) -> None:
+    
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
         self.model_actor = Actor().to(device)
         self.target_model_actor = Actor().to(device)
         self.model_critic = Critic().to(device)
         self.target_model_critic = Critic().to(device)
+
+        self.modelPath = modelPath
+        if not os.path.exists(self.modelPath):
+            os.mkdir(self.modelPath)
+        if os.listdir(self.modelPath) != []:
+            try:
+                self.model_actor.load_state_dict(torch.load(self.modelPath + 'Actor.pt'))
+                self.model_critic.load_state_dict(torch.load(self.modelPath + 'Critic.pt'))
+                self.target_model_actor.load_state_dict(torch.load(self.modelPath + 'Actor_target.pt'))
+                self.target_model_critic.load_state_dict(torch.load(self.modelPath + 'Critic_target.pt'))
+            except:
+                print("Model Loading Error!")
+                time.sleep(1)
+
 
     def _critic_learn(
         self, 
@@ -191,23 +210,23 @@ class DDPG():
         id
     ):  
         status = []
-        status.append(env.getFdm(id).getProperty("propulsion/total-fuel-lbs") / 3000)  # Ego_fuel
-        status.append(env.getFdm(id).getHP())  # Ego_hp
-        status.append(env.getFdm(id^3).getHP())  # Oppo_hp
+        # status.append(env.getFdm(id).getProperty("propulsion/total-fuel-lbs") / 3000)  # Ego_fuel
+        # status.append(env.getFdm(id).getHP())  # Ego_hp
+        # status.append(env.getFdm(id^3).getHP())  # Oppo_hp
 
         status = status + env.getFdm(id).getProperty("attitudeRad")  # Euler angle
         status = status + env.getFdm(id).getProperty("position")[0:2]  # Location
         status.append((env.getFdm(id).getProperty("position")[2] - 30000) / 1000)  # Height
-        status.append(env.getFdm(id).getProperty("velocity")[0] / 500)  # Velocity
-        status.append(env.getFdm(id).getProperty("velocity")[1] / 500)  # Velocity
-        status.append(env.getFdm(id).getProperty("velocity")[2] / 500)  # Velocity
+        # status.append(env.getFdm(id).getProperty("velocity")[0] / 500)  # Velocity
+        # status.append(env.getFdm(id).getProperty("velocity")[1] / 500)  # Velocity
+        # status.append(env.getFdm(id).getProperty("velocity")[2] / 500)  # Velocity
 
         status = status + env.getFdm(id^3).getProperty("attitudeRad")
         status = status + env.getFdm(id^3).getProperty("position")[0:2]
         status.append((env.getFdm(id^3).getProperty("position")[2] - 30000) / 1000)
-        status.append(env.getFdm(id^3).getProperty("velocity")[0] / 500)
-        status.append(env.getFdm(id^3).getProperty("velocity")[1] / 500)
-        status.append(env.getFdm(id^3).getProperty("velocity")[2] / 500)
+        # status.append(env.getFdm(id^3).getProperty("velocity")[0] / 500)
+        # status.append(env.getFdm(id^3).getProperty("velocity")[1] / 500)
+        # status.append(env.getFdm(id^3).getProperty("velocity")[2] / 500)
 
         return torch.Tensor(status)
 
@@ -222,8 +241,9 @@ class DDPG():
         r_gunsnap = reward.R_gunsnap(env, id)
         r_deck = reward.R_deck(env, id)
         r_too_close = reward.R_too_close(env, id)
-        print("*Reward: {}\t{}\t{}\t{}\t{}".format(r_rp, r_closure, r_gunsnap, r_deck, r_too_close))
-        return r_rp + r_closure + r_gunsnap + r_deck + r_too_close
+        r_win = reward.R_win(env, id)
+        # print("*Reward: {}\t{}\t{}\t{}\t{}\t{}".format(r_rp, r_closure, r_gunsnap, r_deck, r_too_close, r_win))
+        return r_rp + r_closure + r_gunsnap + r_deck + r_too_close + r_win
 
 
     def episode(
@@ -239,10 +259,10 @@ class DDPG():
         )
         print("**********Nof: {}**********".format(env.getNof()))
         
-        pre_status_1 = torch.zeros([21])
+        pre_status_1 = torch.zeros([18])
         pre_action_1 = torch.zeros([4])
         pre_reward_1 = 0
-        pre_status_2 = torch.zeros([21])
+        pre_status_2 = torch.zeros([18])
         pre_action_2 = torch.zeros([4])
         pre_reward_2 = 0
         pre_terminate = 0
@@ -259,10 +279,12 @@ class DDPG():
             reward_1 = self.getReward(env, 1)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
             reward_2 = self.getReward(env, 2)
 
-            action_1 = action_1 + torch.rand([4]).to(device) - 0.5
+            # action_1 = action_1 + torch.rand([4]).to(device) - 0.5
 
             env.getFdm(1).sendAction(action_1.unsqueeze(0))
-            env.getFdm(2).sendAction(action_2.unsqueeze(0))
+            # env.getFdm(2).sendAction(action_2.unsqueeze(0))
+            print("\n\n!action:\t{}\n!status:\t{}\n\n".format(action_1, status_1))
+            env.getFdm(2).sendAction([[0, -.07, 0, 0]])
 
             pre_status_1 = pre_status_1.to(device)
             pre_status_2 = pre_status_2.to(device)
@@ -275,9 +297,9 @@ class DDPG():
 
             self._critic_learn(pre_status_1, pre_action_1, reward_1, status_1, pre_terminate)
 
-            self._actor_learn(pre_status_2)
+            # self._actor_learn(pre_status_2)
 
-            self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate)
+            # self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate)
             
             pre_status_1 = status_1
             pre_status_2 = status_2
@@ -301,7 +323,10 @@ class DDPG():
 
         for _ in tqdm(range(epochs)):
             self.episode(device, fgfs_1, fgfs_2, playSpeed)
-            # torch.save(self.model.state_dict(), self.modelPath + 'Epoch.pt')
+            torch.save(self.model_actor.state_dict(), self.modelPath + 'Actor.pt')
+            torch.save(self.model_critic.state_dict(), self.modelPath + 'Critic.pt')
+            torch.save(self.target_model_actor.state_dict(), self.modelPath + 'Actor_target.pt')
+            torch.save(self.target_model_critic.state_dict(), self.modelPath + 'Critic_target.pt')
 
 
 
@@ -318,7 +343,7 @@ if __name__ == "__main__":
         cuda=args.cuda,
         fgfs_1=args.fgfs_1,
         fgfs_2=args.fgfs_2,
-        playSpeed=args.playSpeed,
+        playSpeed=float(args.playSpeed),
     )
 
 

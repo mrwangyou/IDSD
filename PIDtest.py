@@ -28,9 +28,21 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def PIDControl():
 
+    def __init__(
+        self,
+        env
+    ):
+        pass
 
-
+    def poseControl(
+        self,
+        psi,
+        theta,
+        phi
+    ):
+        pass
 
 
 
@@ -45,18 +57,29 @@ if __name__ == '__main__':
     tmp = 1
     c = 1
     while True:
-        if c == 0:
-            print('err')
-        else:
-            print((env.getProperty('attitudeRad')[1] - tmp) / c)
-        c = env.getProperty('attitudeRad')[1] - tmp
-        tmp = env.getProperty('attitudeRad')[1]
+        # if c == 0:
+        #     print('err')
+        # else:
+        #     print((env.getProperty('attitudeRad')[1] - tmp) / c)
+        # c = env.getProperty('attitudeRad')[1] - tmp
+        # tmp = env.getProperty('attitudeRad')[1]
 
+        if 75 <= env.getProperty('attitudeDeg')[2] <= 85:
         # env.sendAction([[0, -.07, 0, 0]])
-        env.sendAction([[0, -1, 0, 0]])
+            if env.getNof() > 360:
+                env.sendAction([[0, -1, 0, 1]])    
+            else:
+                env.sendAction([[0, -1, 0, 1]])
+        # if env.getNof() == 120:
+        #     env.sendAction([[0, -.07, 0, 0]])
+        elif env.getProperty('attitudeDeg')[2] <= 75:
+            env.sendAction([[1, -1, 0, 1]])
+        else:
+            env.sendAction([[-1, -1, 0, 1]])
         env.step(playSpeed=1)
 
-        # print("{0[0]}\t{0[1]}\t{0[2]}".format(env.getProperty('attitudeRad')))
+        print("{0[0]}\t{0[1]}\t{0[2]}".format(env.getProperty('attitudeRad')))
+        # print("{0[0]}\t{0[1]}\t{0[2]}".format(env.getProperty('velocity')))
 
 
 
