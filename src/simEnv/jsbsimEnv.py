@@ -136,15 +136,20 @@ class JsbsimEnv():
     def sendAction(
         self,
         action,
+        actionType=None,
     ):
-        action_space = [
-            "fcs/aileron-cmd-norm",  # 副翼
-            "fcs/elevator-cmd-norm",  # 升降舵
-            "fcs/rudder-cmd-norm",  # 方向舵
-            "fcs/throttle-cmd-norm",  # 节流阀
-        ]
-        for i in range(len(action_space)):
-            self.fdm[action_space[i]] = action[0][i]
+        if actionType == None:
+            action_space = [
+                "fcs/aileron-cmd-norm",  # 副翼
+                "fcs/elevator-cmd-norm",  # 升降舵
+                "fcs/rudder-cmd-norm",  # 方向舵
+                "fcs/throttle-cmd-norm",  # 节流阀
+            ]
+            for i in range(len(action_space)):
+                self.fdm[action_space[i]] = action[0][i]
+        else:
+            self.fdm[actionType] = action[0]
+            # print("{}".format(actionType))
 
     def getHP(self):  # Health point
         return self.fdm_hp
