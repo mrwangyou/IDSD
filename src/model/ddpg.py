@@ -25,6 +25,7 @@ def parse_args():
     parser.add_argument('--fgfs_1', action='store_true', help='specifies the rendering in FlightGear')
     parser.add_argument('--fgfs_2', action='store_true', help='specifies the rendering in FlightGear')
     parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
+    parser.add_argument('--modelPath', default='/data/wnn_data/bestModel/', metavar='str', help='specifies the pre-trained model')
     args = parser.parse_args()
     return args
 
@@ -33,7 +34,7 @@ class Actor(nn.Module):
 
     def __init__(
         self,
-        status_dim=18,
+        status_dim=12,
         hidden_dim_1=64,
         hidden_dim_2=64,
         hidden_dim_3=64,
@@ -72,7 +73,7 @@ class Critic(nn.Module):
 
     def __init__(
         self,
-        status_dim=18,
+        status_dim=12,
         num_of_actions=4,  # temporary
         hidden_dim_1=64,
         hidden_dim_2=64,
@@ -259,10 +260,10 @@ class DDPG():
         )
         print("**********Nof: {}**********".format(env.getNof()))
         
-        pre_status_1 = torch.zeros([18])
+        pre_status_1 = torch.zeros([12])
         pre_action_1 = torch.zeros([4])
         pre_reward_1 = 0
-        pre_status_2 = torch.zeros([18])
+        pre_status_2 = torch.zeros([12])
         pre_action_2 = torch.zeros([4])
         pre_reward_2 = 0
         pre_terminate = 0
@@ -272,42 +273,44 @@ class DDPG():
             if terminate != 0:
                 break
             
-            status_1 = self.getStatus(env, 1)
-            status_2 = self.getStatus(env, 2)
-            action_1 = self.model_actor(self.getStatus(env, 1).to(device))
-            action_2 = self.model_actor(self.getStatus(env, 2).to(device))
-            reward_1 = self.getReward(env, 1)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
-            reward_2 = self.getReward(env, 2)
+            if env.getNof() % 12 == 0:
+                status_1 = self.getStatus(env, 1)
+                status_2 = self.getStatus(env, 2)
+                action_1 = self.model_actor(self.getStatus(env, 1).to(device))
+                action_2 = self.model_actor(self.getStatus(env, 2).to(device))
+                reward_1 = self.getReward(env, 1)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
+                reward_2 = self.getReward(env, 2)
 
-            # action_1 = action_1 + torch.rand([4]).to(device) - 0.5
+                # action_1 = action_1 + torch.rand([4]).to(device) - 0.5
 
-            env.getFdm(1).sendAction(action_1.unsqueeze(0))
-            # env.getFdm(2).sendAction(action_2.unsqueeze(0))
-            print("\n\n!action:\t{}\n!status:\t{}\n\n".format(action_1, status_1))
-            env.getFdm(2).sendAction([[0, -.07, 0, 0]])
-
-            pre_status_1 = pre_status_1.to(device)
-            pre_status_2 = pre_status_2.to(device)
-            pre_action_1 = pre_action_1.to(device)
-            pre_action_2 = pre_action_2.to(device)
-            status_1 = status_1.to(device)
-            status_2 = status_2.to(device)
-
-            self._actor_learn(pre_status_1)
-
-            self._critic_learn(pre_status_1, pre_action_1, reward_1, status_1, pre_terminate)
-
-            # self._actor_learn(pre_status_2)
-
-            # self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate)
             
-            pre_status_1 = status_1
-            pre_status_2 = status_2
-            pre_action_1 = action_1
-            pre_action_2 = action_2
-            pre_reward_1 = reward_1
-            pre_reward_2 = reward_2
-            pre_terminate = env.terminate()
+                env.getFdm(1).sendAction(action_1.unsqueeze(0))
+                # env.getFdm(2).sendAction(action_2.unsqueeze(0))
+                # print("\n\n!action:\t{}\n!status:\t{}\n\n".format(action_1, status_1))
+                env.getFdm(2).sendAction([[0, -.07, 0, 0]])
+
+                pre_status_1 = pre_status_1.to(device)
+                pre_status_2 = pre_status_2.to(device)
+                pre_action_1 = pre_action_1.to(device)
+                pre_action_2 = pre_action_2.to(device)
+                status_1 = status_1.to(device)
+                status_2 = status_2.to(device)
+
+                self._actor_learn(pre_status_1)
+
+                self._critic_learn(pre_status_1, pre_action_1, reward_1, status_1, pre_terminate)
+
+                # self._actor_learn(pre_status_2)
+
+                # self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate)
+                
+                pre_status_1 = status_1
+                pre_status_2 = status_2
+                pre_action_1 = action_1
+                pre_action_2 = action_2
+                pre_reward_1 = reward_1
+                pre_reward_2 = reward_2
+                pre_terminate = env.terminate()
 
         self.sync_target()
 
@@ -337,6 +340,7 @@ if __name__ == "__main__":
 
     ddpg = DDPG(
         cuda=args.cuda,
+        modelPath=args.modelPath
     )
 
     ddpg.train(

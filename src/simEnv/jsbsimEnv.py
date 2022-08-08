@@ -309,7 +309,7 @@ class DogfightEnv():
         # print("**Fuel: \t{}".format(self.getFdm(1).getProperty("propulsion/total-fuel-lbs")))
 
         self.damage()
-
+    
         if self.getNof() >= 12000:
             return -1
         
