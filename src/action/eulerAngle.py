@@ -28,6 +28,18 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
+def attitude2surface(
+    env,
+    psi,
+    theta,
+    phi,
+):
+    pass
+
+
+
+
 class PIDControl():
 
     def __init__(
@@ -43,7 +55,7 @@ class PIDControl():
         phi,
         flag=0,
         flag2=0
-    ):  
+    ):
         # print("Warning: {}".format(flag))
         psi_ego = self.env.getProperty('attitudeDeg')[0]
         if psi_ego >= 180:
