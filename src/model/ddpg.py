@@ -17,7 +17,7 @@ from tqdm import tqdm
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
 from src.reward import reward
-from src.simEnv.jsbsimEnv import DogfightEnv as Env
+from src.simEnv.jsbsim.jsbsimEnv import DogfightEnv as Env
 
 def parse_args():
     parser = argparse.ArgumentParser(description='TBD')
