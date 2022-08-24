@@ -30,22 +30,22 @@ for line in f:
     q = np.append(q, np.array(float(line.split()[4]) - y0))
     r = np.append(r, np.array(float(line.split()[5]) - z0))
 # 基于ax1变量绘制三维图
-#设置xyz方向的变量（空间曲线）
-# z=np.linspace(0,13,1000)#在1~13之间等间隔取1000个点
-# x=5*np.sin(z)
-# y=5*np.cos(z)
+# 设置xyz方向的变量（空间曲线）
+# z = np.linspace(0,13,1000)  # 在1~13之间等间隔取1000个点
+# x = 5 * np.sin(z)
+# y = 5 * np.cos(z)
  
-# #设置xyz方向的变量（散点图）
-# zd=13*np.random.random(100)
-# xd=5*np.sin(zd)
-# yd=5*np.cos(zd)
+# # 设置xyz方向的变量（散点图）
+# zd = 13 * np.random.random(100)
+# xd = 5 * np.sin(zd)
+# yd = 5 * np.cos(zd)
  
-#设置坐标轴
+# 设置坐标轴
 ax1.set_xlabel('X')
 ax1.set_ylabel('Y')
 ax1.set_zlabel('Z')
-# ax1.scatter(xd,yd,zd,cmap='Blues') #绘制散点图
+# ax1.scatter(xd, yd, zd, cmap='Blues')  # 绘制散点图
 ax1.plot3D(y, z, x, 'red')  # 绘制空间曲线
 ax1.plot3D(q, r, p, 'blue')  # 绘制空间曲线
-plt.show()#显示图像
+plt.show()  # 显示图像
 
