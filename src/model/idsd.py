@@ -16,7 +16,7 @@ torch.set_num_threads(8)
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
 from repLearning.repLearning import Representation
-from src.simEnv.jsbsim.jsbsimEnv import DogfightEnv as Env
+from src.environments.jsbsim.jsbsimEnv import DogfightEnv as Env
 
 
 class DogfightDataset(Dataset):

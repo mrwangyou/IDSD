@@ -17,7 +17,7 @@ from tqdm import tqdm
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
 from src.reward import reward
-from src.simEnv.jsbsim.jsbsimEnv import JsbsimEnv as Env
+from src.environments.jsbsim.jsbsimEnv import JsbsimEnv as Env
 
 def parse_args():
     parser = argparse.ArgumentParser(description='123')
