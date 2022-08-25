@@ -1,8 +1,11 @@
 import argparse
+from re import S
 import sys
 import time
+import warnings
 
 import jsbsim
+import numpy as np
 
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
@@ -38,6 +41,11 @@ class DogfightEnv():
 
 		df.disable_log()
 
+		self.planeID = planes[1]
+
+		print(df.get_plane_state(self.planeID))
+		# warnings.warn('Dogfight simulation environments have no global data!')
+
 		for i in planes:
 			df.reset_machine(i)
 
@@ -71,6 +79,7 @@ class DogfightEnv():
 		# Wait until plane pitch attitude >= 15
 		p = 0
 		while p < 15:
+			print(df.get_plane_state(self.planeID)['horizontal_speed'])
 			time.sleep(1/60)
 			plane_state = df.get_plane_state(planes[3])
 			df.update_scene()
@@ -84,21 +93,18 @@ class DogfightEnv():
 		df.retract_gear(planes[3])
 		df.retract_gear(planes[1])
 
+		
+
 		# Wait until linear speed >= 500 km/h
 		s = 0
 		while s < 1000: # Linear speed is given in m/s. To translate in km/h, just divide it by 3.6
 			plane_state = df.get_plane_state(planes[3])
 			df.update_scene()
 			s = plane_state["altitude"]
+			print(df.get_plane_state(self.planeID)['horizontal_speed'])
+			# print((df.get_plane_state(self.planeID)['horizontal_speed'] ** 2 + df.get_plane_state(self.planeID)['vertical_speed'] ** 2) / (df.get_plane_state(self.planeID)['linear_speed'] ** 2))
 
-		# # Wait until linear speed >= 500 km/h
-		# s = 0
-		# while s < 500 / 3.6: # Linear speed is given in m/s. To translate in km/h, just divide it by 3.6
-		# 	plane_state = df.get_plane_state(planes[3])
-		# 	# df.display_2DText([0.25, 0.75], "Plane speed: " + str(plane_state["linear_speed"]), 0.04, [1, 0.5, 0, 1])
-		# 	# df.display_vector(plane_state["position"], plane_state["move_vector"], "Linear speed: " + str(plane_state["linear_speed"]), [0, 0.02], [0, 1, 0, 1], 0.02)
-		# 	df.update_scene()
-		# 	s = plane_state["linear_speed"]
+		df.set_plane_yaw(self.planeID, 1)
 
 		missiles = df.get_machine_missiles_list(planes[3])
 		print(missiles)
@@ -113,10 +119,81 @@ class DogfightEnv():
 		df.set_missile_life_delay(missile_id, 60)
 
 		df.set_renderless_mode(False)
+		
+		while True:
+			self.step()
 
-		# print(df.get_targets_list(missile_id))
-		raise Exception("")
+	def getProperty(
+		self,
+		prop,
+	) -> list:
+		if prop == 'position':
+			return [
+				df.get_plane_state(self.planeID)['position'][0],
+				df.get_plane_state(self.planeID)['position'][2],
+				df.get_plane_state(self.planeID)['position'][1],
+			]
+		elif prop == 'positionEci':
+			warnings.warn('Dogfight simulation environments have no global data!')
+			return [
+				df.get_plane_state(self.planeID)['position'][0],
+				df.get_plane_state(self.planeID)['position'][2],
+				df.get_plane_state(self.planeID)['position'][1],
+			]
+		elif prop == 'positionEcef':
+			warnings.warn('Dogfight simulation environments have no global data!')
+			return [
+				df.get_plane_state(self.planeID)['position'][0],
+				df.get_plane_state(self.planeID)['position'][2],
+				df.get_plane_state(self.planeID)['position'][1],
+			]
+		elif prop == 'attitudeRad':
+			return [
+				df.get_plane_state(self.planeID)['heading'] / 180 * np.pi,
+				df.get_plane_state(self.planeID)['pitch_attitude'] / 180 * np.pi,
+				df.get_plane_state(self.planeID)['roll_attitude'] / 180 * np.pi,
+			]
+		elif prop == 'attitudeDeg':
+			return [
+				df.get_plane_state(self.planeID)['heading'],
+				df.get_plane_state(self.planeID)['pitch_attitude'],
+				df.get_plane_state(self.planeID)['roll_attitude'],
+			]
+		elif prop == 'pose':
+			return [
+				df.get_plane_state(self.planeID)['position'][0],
+				df.get_plane_state(self.planeID)['position'][2],
+				df.get_plane_state(self.planeID)['position'][1],
+				df.get_plane_state(self.planeID)['heading'],
+				df.get_plane_state(self.planeID)['pitch_attitude'],
+				df.get_plane_state(self.planeID)['roll_attitude'],
+			]
+		elif prop == 'velocity':
+			warnings.warn('三个值为速度在欧拉角上的分量, 与JSBSim中的速度不同')
+			return [
+				df.get_plane_state(self.planeID)['horizontal_speed'],
+				df.get_plane_state(self.planeID)['linear_speed'],
+				-df.get_plane_state(self.planeID)['vertical_speed'],
+			]
+		else:
+			raise Exception("Property {} doesn't exist!".format(prop))
 
+
+	def getHP(self):
+		return df.get_health(self.planeID)['health_level']
+
+	def sendAction(
+		self,
+		action,
+		actionType=None,
+	):
+		if actionType == None:
+			pass
+
+	def step(
+		self,
+	):
+		df.update_scene()
 
 
 if __name__ == '__main__':
