@@ -58,7 +58,7 @@ class DogfightEnv():
 		df.set_client_update_mode(True)
 
 		# Wait until plane thrust = 1
-		# df.set_renderless_mode(True)
+		df.set_renderless_mode(True)
 
 		t = 0
 		while t < 1:
@@ -116,7 +116,7 @@ class DogfightEnv():
 		df.fire_missile(planes[3], missile_slot)
 
 		df.set_missile_target(missile_id, 'ally_2')
-		df.set_missile_life_delay(missile_id, 60)
+		df.set_missile_life_delay(missile_id, 40)
 
 		df.set_renderless_mode(False)
 		
@@ -184,11 +184,16 @@ class DogfightEnv():
 
 	def sendAction(
 		self,
-		action,
+		action,  # [thrust, brake, flaps, pitch, roll, yaw]
 		actionType=None,
 	):
 		if actionType == None:
-			pass
+			df.set_plane_thrust(self.planeID, action[0])
+			df.set_plane_thrust(self.planeID, action[1])
+			df.set_plane_thrust(self.planeID, action[2])
+			df.set_plane_thrust(self.planeID, action[3])
+			df.set_plane_thrust(self.planeID, action[4])
+			df.set_plane_thrust(self.planeID, action[5])
 
 	def step(
 		self,
