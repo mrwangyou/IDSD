@@ -1,5 +1,4 @@
-*/__pycache__/
-*/*/__pycache__/
+**/__pycache__/
 bestModel/
 *_datalog.csv
 src/environments/dogfight/dogfight_sandbox_hg2/

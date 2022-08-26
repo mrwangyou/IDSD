@@ -17,11 +17,13 @@ from tqdm import tqdm
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
 from src.reward import reward
-from src.environments.dogfight.dogfightEnv import DogfightEnv as Env
+from src.environments.jsbsim.jsbsimEnv import DogfightEnv as Env
 
 def parse_args():
     parser = argparse.ArgumentParser(description='TBD')
     parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
+    parser.add_argument('--fgfs_1', action='store_true', help='specifies the rendering in FlightGear')
+    parser.add_argument('--fgfs_2', action='store_true', help='specifies the rendering in FlightGear')
     parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
     parser.add_argument('--modelPath', default='/data/wnn_data/bestModel/', metavar='str', help='specifies the pre-trained model')
     args = parser.parse_args()
@@ -113,7 +115,7 @@ class DDPG():
     def __init__(
         self,
         cuda=0,
-        modelPath='./bestModel',
+        modelPath='/data/wnn_data/bestModel/',
     ) -> None:
     
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
