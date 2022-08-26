@@ -80,7 +80,7 @@ class DogfightEnv():
 		p = 0
 		while p < 15:
 			print(df.get_plane_state(self.planeID)['horizontal_speed'])
-			time.sleep(1/60)
+			# time.sleep(1/60)
 			plane_state = df.get_plane_state(planes[3])
 			df.update_scene()
 			p = plane_state["pitch_attitude"]
@@ -189,11 +189,25 @@ class DogfightEnv():
 	):
 		if actionType == None:
 			df.set_plane_thrust(self.planeID, action[0])
-			df.set_plane_thrust(self.planeID, action[1])
-			df.set_plane_thrust(self.planeID, action[2])
-			df.set_plane_thrust(self.planeID, action[3])
-			df.set_plane_thrust(self.planeID, action[4])
-			df.set_plane_thrust(self.planeID, action[5])
+			df.set_plane_brake(self.planeID, action[1])
+			df.set_plane_flaps(self.planeID, action[2])
+			df.set_plane_pitch(self.planeID, action[3])
+			df.set_plane_roll(self.planeID, action[4])
+			df.set_plane_yaw(self.planeID, action[5])
+		elif actionType == 'thrust' or actionType == 'Thrust':
+			df.set_plane_thrust(self.planeID, action)
+		elif actionType == 'brake' or actionType == 'Brake':
+			df.set_plane_brake(self.planeID, action)
+		elif actionType == 'flaps' or actionType == 'Flaps':
+			df.set_plane_flaps(self.planeID, action)
+		elif actionType == 'pitch' or actionType == 'Pitch':
+			df.set_plane_pitch(self.planeID, action)
+		elif actionType == 'roll' or actionType == 'Roll':
+			df.set_plane_roll(self.planeID, action)
+		elif actionType == 'yaw' or actionType == 'Yaw':
+			df.set_plane_yaw(self.planeID, action)
+		else:
+			raise Exception("Action {} doesn't exist!".format(actionType))
 
 	def step(
 		self,
