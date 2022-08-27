@@ -1,5 +1,5 @@
 import argparse
-from re import S
+import random
 import sys
 import time
 import warnings
@@ -31,19 +31,22 @@ class DogfightEnv():
 		port='50888',
 	) -> None:
 		
-		# Enter the IP and port displayed in top-left corner of DogFight screen
-		df.connect(host, int(port))
+		try:
+			df.get_planes_list()
+		except:
+			print('Run for the first time.')
+			df.connect(host, int(port))
 
 		time.sleep(2)
 
 		planes = df.get_planes_list()
-		print("Planes list: {}".format(str(planes)))
+		# print("Planes list: {}".format(str(planes)))
 
 		df.disable_log()
 
 		self.planeID = planes[1]
 
-		print(df.get_plane_state(self.planeID))
+		# print(df.get_plane_state(self.planeID))
 		# warnings.warn('Dogfight simulation environments have no global data!')
 
 		for i in planes:
@@ -79,7 +82,7 @@ class DogfightEnv():
 		# Wait until plane pitch attitude >= 15
 		p = 0
 		while p < 15:
-			print(df.get_plane_state(self.planeID)['horizontal_speed'])
+			# print(df.get_plane_state(self.planeID)['horizontal_speed'])
 			# time.sleep(1/60)
 			plane_state = df.get_plane_state(planes[3])
 			df.update_scene()
@@ -101,13 +104,13 @@ class DogfightEnv():
 			plane_state = df.get_plane_state(planes[3])
 			df.update_scene()
 			s = plane_state["altitude"]
-			print(df.get_plane_state(self.planeID)['horizontal_speed'])
+			# print(df.get_plane_state(self.planeID)['horizontal_speed'])
 			# print((df.get_plane_state(self.planeID)['horizontal_speed'] ** 2 + df.get_plane_state(self.planeID)['vertical_speed'] ** 2) / (df.get_plane_state(self.planeID)['linear_speed'] ** 2))
 
 		df.set_plane_yaw(self.planeID, 1)
 
 		missiles = df.get_machine_missiles_list(planes[3])
-		print(missiles)
+		# print(missiles)
 
 		# Get the missile id at slot 0
 		missile_slot = 1
@@ -118,10 +121,10 @@ class DogfightEnv():
 		df.set_missile_target(missile_id, 'ally_2')
 		df.set_missile_life_delay(missile_id, 40)
 
-		df.set_renderless_mode(False)
+		# df.set_renderless_mode(False)
 		
-		while True:
-			self.step()
+		# while True:
+		# 	self.step()
 
 	def getProperty(
 		self,
@@ -188,7 +191,7 @@ class DogfightEnv():
 		actionType=None,
 	):
 		if actionType == None:
-			df.set_plane_thrust(self.planeID, action[0])
+			# df.set_plane_thrust(self.planeID, action[0])
 			df.set_plane_brake(self.planeID, action[1])
 			df.set_plane_flaps(self.planeID, action[2])
 			df.set_plane_pitch(self.planeID, action[3])
@@ -218,8 +221,25 @@ class DogfightEnv():
 if __name__ == '__main__':
 	args = parse_args()
 
-	DogfightEnv(
+	win = 0
+	summ = 0
+
+	d = DogfightEnv(
 		args.host,
 		args.port,
 	)
-
+	while True:
+		d.sendAction([random.random() * 2 - 1] * 6)
+		d.step()
+		# print(" {0[destroyed]} {0[wreck]} {0[crashed]} {0[active]}".format(df.get_missile_state('Meteorennemy_2.1')))
+		if not df.get_missile_state('Meteorennemy_2.1')['active']:
+			summ += 1
+			if d.getHP() >= .9:
+				win += 1
+			f = open('./random.txt', 'a')
+			f.write("{} / {}\n".format(win, summ))
+			f.close()
+			d.__init__(
+				args.host,
+				args.port,
+			)

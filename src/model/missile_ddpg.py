@@ -22,8 +22,6 @@ from src.environments.jsbsim.jsbsimEnv import DogfightEnv as Env
 def parse_args():
     parser = argparse.ArgumentParser(description='TBD')
     parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
-    parser.add_argument('--fgfs_1', action='store_true', help='specifies the rendering in FlightGear')
-    parser.add_argument('--fgfs_2', action='store_true', help='specifies the rendering in FlightGear')
     parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
     parser.add_argument('--modelPath', default='/data/wnn_data/bestModel/', metavar='str', help='specifies the pre-trained model')
     args = parser.parse_args()
@@ -38,7 +36,7 @@ class Actor(nn.Module):
         hidden_dim_1=64,
         hidden_dim_2=64,
         hidden_dim_3=64,
-        num_of_actions=4,  # temporary
+        num_of_actions=6,  # temporary
         dropout=.5,
     ):
         super(Actor, self).__init__()
@@ -74,7 +72,7 @@ class Critic(nn.Module):
     def __init__(
         self,
         status_dim=12,
-        num_of_actions=4,  # temporary
+        num_of_actions=6,  # temporary
         hidden_dim_1=64,
         hidden_dim_2=64,
         hidden_dim_3=64,
