@@ -12,8 +12,6 @@ sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 from src.environments.dogfight.dogfight_sandbox_hg2.network_client_example import \
     dogfight_client as df
 
-# Print fps function, to check the network client frequency.
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description='TBD')
@@ -36,8 +34,7 @@ class DogfightEnv():
 		except:
 			print('Run for the first time.')
 			df.connect(host, int(port))
-
-		time.sleep(2)
+			time.sleep(2)
 
 		planes = df.get_planes_list()
 		# print("Planes list: {}".format(str(planes)))
@@ -46,21 +43,15 @@ class DogfightEnv():
 
 		self.planeID = planes[1]
 
-		# print(df.get_plane_state(self.planeID))
-		# warnings.warn('Dogfight simulation environments have no global data!')
-
 		for i in planes:
 			df.reset_machine(i)
 
 		# Set plane thrust level (0 to 1)
 		df.set_plane_thrust(planes[3], 1)
-
 		df.set_plane_thrust(planes[1], 1)
 
-		# Set client update mode ON: the scene update must be done by client network, calling "update_scene()"
 		df.set_client_update_mode(True)
 
-		# Wait until plane thrust = 1
 		df.set_renderless_mode(True)
 
 		t = 0
@@ -71,7 +62,7 @@ class DogfightEnv():
 
 
 		# Activate the post-combustion (increases thrust power) 
-		# 如果启用了Renderless mode，那么可能打开了，但是最终的渲染没有显示
+		# 如果启用了Renderless mode，那么加速可能打开了，但是最终的渲染没有显示
 		df.activate_post_combustion(planes[3])
 		df.activate_post_combustion(planes[1])
 
@@ -97,15 +88,11 @@ class DogfightEnv():
 		df.retract_gear(planes[1])
 
 		
-
-		# Wait until linear speed >= 500 km/h
 		s = 0
 		while s < 1000: # Linear speed is given in m/s. To translate in km/h, just divide it by 3.6
 			plane_state = df.get_plane_state(planes[3])
 			df.update_scene()
 			s = plane_state["altitude"]
-			# print(df.get_plane_state(self.planeID)['horizontal_speed'])
-			# print((df.get_plane_state(self.planeID)['horizontal_speed'] ** 2 + df.get_plane_state(self.planeID)['vertical_speed'] ** 2) / (df.get_plane_state(self.planeID)['linear_speed'] ** 2))
 
 		df.set_plane_yaw(self.planeID, 1)
 
@@ -216,6 +203,12 @@ class DogfightEnv():
 		self,
 	):
 		df.update_scene()
+		if not df.get_missile_state('Meteorennemy_2.1')['active']:
+			if d.getHP() >= .9:
+				return -1
+			else:
+				return 1
+		return 0
 
 
 if __name__ == '__main__':

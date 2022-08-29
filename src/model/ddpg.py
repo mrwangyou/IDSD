@@ -256,7 +256,6 @@ class DDPG():
             fgfs_1,
             fgfs_2
         )
-        print("**********Nof: {}**********".format(env.getNof()))
         
         pre_status_1 = torch.zeros([12])
         pre_action_1 = torch.zeros([4])
@@ -338,7 +337,7 @@ if __name__ == "__main__":
 
     ddpg = DDPG(
         cuda=args.cuda,
-        modelPath=args.modelPath
+        modelPath=args.modelPath,
     )
 
     ddpg.train(

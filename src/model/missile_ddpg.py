@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 import sys
 import time
 
@@ -16,13 +17,14 @@ from tqdm import tqdm
 
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
-from src.reward import reward
 from src.environments.jsbsim.jsbsimEnv import DogfightEnv as Env
+from src.reward import reward
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='TBD')
-    parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
-    parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
+    parser.add_argument('--host', default='10.184.0.0', metavar='str', help='specifies Harfang host id')
+    parser.add_argument('--port', default='50888', metavar='str', help='specifies Harfang port id')
     parser.add_argument('--modelPath', default='/data/wnn_data/bestModel/', metavar='str', help='specifies the pre-trained model')
     args = parser.parse_args()
     return args
@@ -113,7 +115,7 @@ class DDPG():
     def __init__(
         self,
         cuda=0,
-        modelPath='/data/wnn_data/bestModel/',
+        modelPath='./bestModel/',
     ) -> None:
     
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
@@ -206,26 +208,8 @@ class DDPG():
     def getStatus(
         self,
         env,
-        id
     ):  
-        status = []
-        # status.append(env.getFdm(id).getProperty("propulsion/total-fuel-lbs") / 3000)  # Ego_fuel
-        # status.append(env.getFdm(id).getHP())  # Ego_hp
-        # status.append(env.getFdm(id^3).getHP())  # Oppo_hp
-
-        status = status + env.getFdm(id).getProperty("attitudeRad")  # Euler angle
-        status = status + env.getFdm(id).getProperty("position")[0:2]  # Location
-        status.append((env.getFdm(id).getProperty("position")[2] - 30000) / 1000)  # Height
-        # status.append(env.getFdm(id).getProperty("velocity")[0] / 500)  # Velocity
-        # status.append(env.getFdm(id).getProperty("velocity")[1] / 500)  # Velocity
-        # status.append(env.getFdm(id).getProperty("velocity")[2] / 500)  # Velocity
-
-        status = status + env.getFdm(id^3).getProperty("attitudeRad")
-        status = status + env.getFdm(id^3).getProperty("position")[0:2]
-        status.append((env.getFdm(id^3).getProperty("position")[2] - 30000) / 1000)
-        # status.append(env.getFdm(id^3).getProperty("velocity")[0] / 500)
-        # status.append(env.getFdm(id^3).getProperty("velocity")[1] / 500)
-        # status.append(env.getFdm(id^3).getProperty("velocity")[2] / 500)
+        status = [random.random()] * 12
 
         return torch.Tensor(status)
 
@@ -233,37 +217,25 @@ class DDPG():
     def getReward(
         self,
         env,
-        id
     ):
-        r_rp = reward.R_rp(env, id)
-        r_closure = reward.R_closure(env, id)
-        r_gunsnap = reward.R_gunsnap(env, id)
-        r_deck = reward.R_deck(env, id)
-        r_too_close = reward.R_too_close(env, id)
-        r_win = reward.R_win(env, id)
-        # print("*Reward: {}\t{}\t{}\t{}\t{}\t{}".format(r_rp, r_closure, r_gunsnap, r_deck, r_too_close, r_win))
-        return r_rp + r_closure + r_gunsnap + r_deck + r_too_close + r_win
+        return random.random()
 
 
     def episode(
         self,
         device,
-        fgfs_1,
-        fgfs_2,
-        playSpeed,
+        host,
+        port,
+        playSpeed=0,
     ):
         env = Env(
-            fgfs_1,
-            fgfs_2
+            host,
+            port,
         )
-        print("**********Nof: {}**********".format(env.getNof()))
         
-        pre_status_1 = torch.zeros([12])
-        pre_action_1 = torch.zeros([4])
-        pre_reward_1 = 0
-        pre_status_2 = torch.zeros([12])
-        pre_action_2 = torch.zeros([4])
-        pre_reward_2 = 0
+        pre_status = torch.zeros([12])
+        pre_action = torch.zeros([6])
+        pre_reward = 0
         pre_terminate = 0
 
         while True:
@@ -272,42 +244,25 @@ class DDPG():
                 break
             
             if env.getNof() % 12 == 0:
-                status_1 = self.getStatus(env, 1)
-                status_2 = self.getStatus(env, 2)
-                action_1 = self.model_actor(self.getStatus(env, 1).to(device))
-                action_2 = self.model_actor(self.getStatus(env, 2).to(device))
-                reward_1 = self.getReward(env, 1)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
-                reward_2 = self.getReward(env, 2)
+                status = self.getStatus(env)
+                action = self.model_actor(self.getStatus(env).to(device))
+                reward = self.getReward(env)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
 
                 # action_1 = action_1 + torch.rand([4]).to(device) - 0.5
 
-            
-                env.getFdm(1).sendAction(action_1.unsqueeze(0))
-                # env.getFdm(2).sendAction(action_2.unsqueeze(0))
-                # print("\n\n!action:\t{}\n!status:\t{}\n\n".format(action_1, status_1))
-                env.getFdm(2).sendAction([[0, -.07, 0, 0]])
+                env.sendAction(action_1.unsqueeze(0))
 
-                pre_status_1 = pre_status_1.to(device)
-                pre_status_2 = pre_status_2.to(device)
-                pre_action_1 = pre_action_1.to(device)
-                pre_action_2 = pre_action_2.to(device)
-                status_1 = status_1.to(device)
-                status_2 = status_2.to(device)
+                pre_status = pre_status.to(device)
+                pre_action = pre_action.to(device)
+                status = status.to(device)
 
-                self._actor_learn(pre_status_1)
+                self._actor_learn(pre_status)
 
-                self._critic_learn(pre_status_1, pre_action_1, reward_1, status_1, pre_terminate)
-
-                # self._actor_learn(pre_status_2)
-
-                # self._critic_learn(pre_status_2, pre_action_2, reward_1, status_2, pre_terminate)
+                self._critic_learn(pre_status, pre_action, reward, status, pre_terminate)
                 
-                pre_status_1 = status_1
-                pre_status_2 = status_2
-                pre_action_1 = action_1
-                pre_action_2 = action_2
-                pre_reward_1 = reward_1
-                pre_reward_2 = reward_2
+                pre_status = status
+                pre_action = action
+                pre_reward = reward
                 pre_terminate = env.terminate()
 
         self.sync_target()
@@ -316,14 +271,14 @@ class DDPG():
         self,
         epochs=20000,
         cuda='0',
-        fgfs_1=False,
-        fgfs_2=False,
+        host=args.host,
+        port=args.port,
         playSpeed=0,
     ):
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
 
         for _ in tqdm(range(epochs)):
-            self.episode(device, fgfs_1, fgfs_2, playSpeed)
+            self.episode(device, host, post, playSpeed)
             torch.save(self.model_actor.state_dict(), self.modelPath + 'Actor.pt')
             torch.save(self.model_critic.state_dict(), self.modelPath + 'Critic.pt')
             torch.save(self.target_model_actor.state_dict(), self.modelPath + 'Actor_target.pt')
@@ -337,14 +292,14 @@ if __name__ == "__main__":
     args = parse_args()
 
     ddpg = DDPG(
-        cuda=args.cuda,
-        modelPath=args.modelPath
+        host=args.host,
+        port=args.port,
     )
 
     ddpg.train(
         cuda=args.cuda,
-        fgfs_1=args.fgfs_1,
-        fgfs_2=args.fgfs_2,
+        host=args.host,
+        port=args.port,
         playSpeed=float(args.playSpeed),
     )
 
