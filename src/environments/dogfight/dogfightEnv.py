@@ -167,6 +167,10 @@ class DogfightEnv():
 				df.get_plane_state(self.planeID)['linear_speed'],
 				-df.get_plane_state(self.planeID)['vertical_speed'],
 			]
+		elif prop == 'poseMissile':
+			return [
+				
+			]
 		else:
 			raise Exception("Property {} doesn't exist!".format(prop))
 

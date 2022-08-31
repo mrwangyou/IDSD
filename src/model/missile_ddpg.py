@@ -211,7 +211,7 @@ class DDPG():
         self,
         env,
     ):  
-        status = [random.random()] * 12
+        status = env.getProperty('pose')
 
         return torch.Tensor(status)
 
