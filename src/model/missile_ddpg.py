@@ -250,7 +250,7 @@ class DDPG():
 
                 # action_1 = action_1 + torch.rand([4]).to(device) - 0.5
 
-                env.sendAction(action_1.unsqueeze(0))
+                env.sendAction(action.unsqueeze(0))
 
                 pre_status = pre_status.to(device)
                 pre_action = pre_action.to(device)
@@ -278,7 +278,7 @@ class DDPG():
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
 
         for _ in tqdm(range(epochs)):
-            self.episode(device, host, post, playSpeed)
+            self.episode(device, host, port, playSpeed)
             torch.save(self.model_actor.state_dict(), self.modelPath + 'Actor.pt')
             torch.save(self.model_critic.state_dict(), self.modelPath + 'Critic.pt')
             torch.save(self.target_model_actor.state_dict(), self.modelPath + 'Actor_target.pt')

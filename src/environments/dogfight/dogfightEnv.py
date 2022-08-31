@@ -214,8 +214,8 @@ class DogfightEnv():
 if __name__ == '__main__':
 	args = parse_args()
 
-	win = 0
-	summ = 0
+	win = 10519
+	summ = 51348
 
 	d = DogfightEnv(
 		args.host,

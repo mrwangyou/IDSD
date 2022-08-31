@@ -27,7 +27,7 @@ class JsbsimEnv():
 
         fdm_hp       = 1,
         fdm_fgfs     = False,
-        flight_mode   = 1,  # 0 for flight test
+        flight_mode  = 1,  # 0 for flight test
     ) -> None:
 
         # FDM Initialization
@@ -143,7 +143,7 @@ class JsbsimEnv():
                 "fcs/aileron-cmd-norm",  # 副翼
                 "fcs/elevator-cmd-norm",  # 升降舵
                 "fcs/rudder-cmd-norm",  # 方向舵
-                "fcs/throttle-cmd-norm",  # 节流阀
+                "fcs/throttle-cmd-norm",  # 油门
             ]
             for i in range(len(action_space)):
                 self.fdm[action_space[i]] = action[0][i]
