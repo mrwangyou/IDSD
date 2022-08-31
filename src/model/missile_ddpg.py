@@ -17,15 +17,17 @@ from tqdm import tqdm
 
 sys.path.append(str(jsbsim.get_default_root_dir()) + '/pFCM/')
 
-from src.environments.jsbsim.jsbsimEnv import DogfightEnv as Env
+from src.environments.dogfight.dogfightEnv import DogfightEnv as Env
 from src.reward import reward
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='TBD')
+    parser.add_argument('--cuda', default='0', metavar='int', help='specifies the GPU to be used')
     parser.add_argument('--host', default='10.184.0.0', metavar='str', help='specifies Harfang host id')
     parser.add_argument('--port', default='50888', metavar='str', help='specifies Harfang port id')
     parser.add_argument('--modelPath', default='/data/wnn_data/bestModel/', metavar='str', help='specifies the pre-trained model')
+    parser.add_argument('--playSpeed', default=0, metavar='double', help='specifies to run in real world time')
     args = parser.parse_args()
     return args
 
@@ -249,8 +251,8 @@ class DDPG():
                 reward = self.getReward(env)  # 当前状态下的状态价值函数，可以理解为上一状态的动作价值函数
 
                 # action_1 = action_1 + torch.rand([4]).to(device) - 0.5
-
-                env.sendAction(action.unsqueeze(0))
+                # print('{}'.format(action[1]))
+                env.sendAction(action)
 
                 pre_status = pre_status.to(device)
                 pre_action = pre_action.to(device)
@@ -271,8 +273,8 @@ class DDPG():
         self,
         epochs=20000,
         cuda='0',
-        host=args.host,
-        port=args.port,
+        host='10.184.0.0',
+        port=50888,
         playSpeed=0,
     ):
         device = torch.device("cuda:{}".format(cuda) if torch.cuda.is_available() else "cpu")
@@ -292,8 +294,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     ddpg = DDPG(
-        host=args.host,
-        port=args.port,
+        cuda=0
     )
 
     ddpg.train(

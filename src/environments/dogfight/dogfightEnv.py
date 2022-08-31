@@ -29,6 +29,8 @@ class DogfightEnv():
 		port='50888',
 	) -> None:
 		
+		self.nof = 0
+
 		try:
 			df.get_planes_list()
 		except:
@@ -179,11 +181,11 @@ class DogfightEnv():
 	):
 		if actionType == None:
 			# df.set_plane_thrust(self.planeID, action[0])
-			df.set_plane_brake(self.planeID, action[1])
-			df.set_plane_flaps(self.planeID, action[2])
-			df.set_plane_pitch(self.planeID, action[3])
-			df.set_plane_roll(self.planeID, action[4])
-			df.set_plane_yaw(self.planeID, action[5])
+			df.set_plane_brake(self.planeID, max(min(action[1], 0), 1))
+			df.set_plane_flaps(self.planeID, max(min(action[2], 0), 1))
+			df.set_plane_pitch(self.planeID, max(min(action[3], -1), 1))
+			df.set_plane_roll(self.planeID, max(min(action[4], -1), 1))
+			df.set_plane_yaw(self.planeID, max(min(action[5], -1), 1))
 		elif actionType == 'thrust' or actionType == 'Thrust':
 			df.set_plane_thrust(self.planeID, action)
 		elif actionType == 'brake' or actionType == 'Brake':
@@ -201,14 +203,28 @@ class DogfightEnv():
 
 	def step(
 		self,
+		playSpeed
 	):
 		df.update_scene()
+		self.nof += 1
 		if not df.get_missile_state('Meteorennemy_2.1')['active']:
-			if d.getHP() >= .9:
+			if self.getHP() >= .9:
 				return -1
 			else:
 				return 1
 		return 0
+	
+	def getNof(self):
+		return self.nof
+
+	def terminate(self):
+		if not df.get_missile_state('Meteorennemy_2.1')['active']:
+			if self.getHP() >= .9:
+				return 1
+			else:
+				return -1
+		else:
+			return 0
 
 
 if __name__ == '__main__':
