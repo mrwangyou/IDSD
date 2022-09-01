@@ -94,14 +94,22 @@ missiles = df.get_machine_missiles_list(planes[3])
 
 # Get the missile id at slot 0
 missile_slot = 1
-missile_id = missiles[missile_slot]
+missileID = missiles[missile_slot]
 
 df.fire_missile(planes[3], missile_slot)
 
-df.set_missile_target(missile_id, 'ally_2')
-df.set_missile_life_delay(missile_id, 40)
+df.set_missile_target(missileID, 'ally_2')
+df.set_missile_life_delay(missileID, 40)
 
-print(df.get_missile_state(missile_id))
+print(df.get_missile_state(missileID))
+
+while True:
+    df.update_scene()
+    print(
+        ((df.get_plane_state(planeID)['position'][0] - df.get_missile_state(missileID)['position'][0]) ** 2 +\
+        (df.get_plane_state(planeID)['position'][1] - df.get_missile_state(missileID)['position'][1]) ** 2 +\
+        (df.get_plane_state(planeID)['position'][2] - df.get_missile_state(missileID)['position'][2]) ** 2) ** .5
+    )
 
 
 

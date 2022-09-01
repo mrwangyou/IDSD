@@ -103,12 +103,12 @@ class DogfightEnv():
 
 		# Get the missile id at slot 0
 		missile_slot = 1
-		missile_id = missiles[missile_slot]
+		self.missileID = missiles[missile_slot]
 
 		df.fire_missile(planes[3], missile_slot)
 
-		df.set_missile_target(missile_id, 'ally_2')
-		df.set_missile_life_delay(missile_id, 40)
+		df.set_missile_target(self.missileID, 'ally_2')
+		df.set_missile_life_delay(self.missileID, 40)
 
 		# df.set_renderless_mode(False)
 		
@@ -169,7 +169,12 @@ class DogfightEnv():
 			]
 		elif prop == 'poseMissile':
 			return [
-				
+				df.get_missile_state(self.missileID)['position'][0],
+				df.get_missile_state(self.missileID)['position'][1],
+				df.get_missile_state(self.missileID)['position'][2],
+				df.get_missile_state(self.missileID)['Euler_angles'][0],
+				df.get_missile_state(self.missileID)['Euler_angles'][1],
+				df.get_missile_state(self.missileID)['Euler_angles'][2],
 			]
 		else:
 			raise Exception("Property {} doesn't exist!".format(prop))
@@ -183,6 +188,7 @@ class DogfightEnv():
 		action,  # [thrust, brake, flaps, pitch, roll, yaw]
 		actionType=None,
 	):
+		print(action)
 		if actionType == None:
 			# df.set_plane_thrust(self.planeID, action[0])
 			df.set_plane_brake(self.planeID, max(min(action[1], 0), 1))
@@ -229,7 +235,12 @@ class DogfightEnv():
 				return -1
 		else:
 			return 0
-
+	
+	def getDistance(self):
+		distance = ((df.get_plane_state(self.planeID)['position'][0] - df.get_missile_state(self.missileID)['position'][0]) ** 2 +\
+        			(df.get_plane_state(self.planeID)['position'][1] - df.get_missile_state(self.missileID)['position'][1]) ** 2 +\
+        			(df.get_plane_state(self.planeID)['position'][2] - df.get_missile_state(self.missileID)['position'][2]) ** 2) ** .5
+		return distance
 
 if __name__ == '__main__':
 	args = parse_args()

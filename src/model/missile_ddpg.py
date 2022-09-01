@@ -56,6 +56,7 @@ class Actor(nn.Module):
         
     def forward(self, status):
 
+        print("*{}".format(status))
         out = self.fc1(status)
         out = self.relu(out)
 
@@ -67,7 +68,6 @@ class Actor(nn.Module):
 
         out = self.hidden2action(out)
         action = self.tanh(out)
-
         return action
 
 
@@ -108,7 +108,7 @@ class Critic(nn.Module):
         out = self.relu(out)
 
         q = self.hidden2q(out)
-
+        print("!Input: {} & {}\nQ: {}".format(status, action, q))
         return q
 
 
@@ -151,19 +151,20 @@ class DDPG():
         self.model_critic.train()
         self.gamma = .9
         self.weight_decay = 1e-2
-        self.optimizer = optim.SGD(self.model_critic.parameters(), lr = 1e-2, momentum=0.9, weight_decay=self.weight_decay)
+        self.optimizer = optim.SGD(self.model_critic.parameters(), lr = 1e-3, momentum=0.9, weight_decay=self.weight_decay)
 
         next_action = self.target_model_actor(next_status)
+        print("Line 157")
         next_q = self.target_model_critic(next_status, next_action)
 
+        # target_q = reward if terminate else reward + self.gamma * next_q
         if terminate:
             target_q = reward
         else:
             target_q = reward + self.gamma * next_q
 
-        # target_q = reward if terminate else reward + self.gamma * next_q
         target_q = target_q.detach()
-        
+        print("Line 166")
         q = self.model_critic(status, action.detach())
         loss_fn = nn.MSELoss()
         loss = loss_fn(q, target_q)
@@ -180,11 +181,17 @@ class DDPG():
     ):
         self.model_actor.train()
         self.weight_decay = 1e-2
-        self.optimizer = optim.SGD(self.model_actor.parameters(), lr = 1e-2, momentum=0.9, weight_decay=self.weight_decay)
+        # print("!~~~~~~~~~~~~~~~~~~~~~")
+        # for _ in self.model_actor.parameters():
+        #     print(_)
+        # print("!~~~~~~~~~~~~~~~~~~~~~")
+        # raise Exception("!")
+        self.optimizer = optim.SGD(self.model_actor.parameters(), lr = 1e-3, momentum=0.9, weight_decay=self.weight_decay)
         
         action = self.model_actor(status)
         # device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
         # action = torch.rand([4]).to(device)
+        print("Line 188")
         q = self.model_critic(status, action)
         # for p in self.model_critic.parameters():
         #     p.requires_grad = False
@@ -211,16 +218,23 @@ class DDPG():
         self,
         env,
     ):  
-        status = env.getProperty('pose')
-
+        status = env.getProperty('pose') + env.getProperty('poseMissile')
+        status = [
+            item / 100 for item in status
+        ]
         return torch.Tensor(status)
+        # return torch.rand(12)
 
 
     def getReward(
         self,
         env,
     ):
-        return random.random()
+        if env.getHP() > .9:
+            print("Reward: {}".format(env.getDistance() / 10000))
+            return env.getDistance() / 10000
+        else:
+            return -10
 
 
     def episode(
