@@ -39,24 +39,24 @@ class ShowerEnv(Env):
         self.shower_length = 60
         return self.state
 
-env = ShowerEnv()
+if __name__ == '__main__':
 
-# print(env.observation_space.sample())  
+    env = ShowerEnv()
 
-episodes = 10
+    episodes = 10
 
-for episode in range(1, episodes+1):
-    state = env.reset()
-    done = False
-    score = 0
+    for episode in range(1, episodes+1):
+        state = env.reset()
+        done = False
+        score = 0
 
-    while not done:
-        env.render()
-        action = env.action_space.sample()
-        n_state, reward, done, info = env.step(action)
-        score += reward
-    
-    print('Episode:{} Score:{}'.format(episode, score))
+        while not done:
+            env.render()
+            action = env.action_space.sample()
+            n_state, reward, done, info = env.step(action)
+            score += reward
+        
+        print('Episode:{} Score:{}'.format(episode, score))
     
 
 
