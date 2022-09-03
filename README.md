@@ -39,4 +39,4 @@
 
 1. 太多了以至于下笔不知道从哪里写起
 
-## 阵线全部迁移至最新Git repo（虽然还没开始建）
+## 该项目已用OpenAI Gym重构后迁移至最新[Git repo](https://github.com/mrwangyou/DBRL)
